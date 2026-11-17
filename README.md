@@ -16,6 +16,16 @@ bash scripts/reproduce.sh
 
 报告为 [实验报告.md](实验报告.md)，严格沿用课程模板的五个部分。原始要求和模板未修改。
 
+## 图形化 Playground
+
+独立的 React + FastAPI 工作台提供真实编译运行、AST / SSA / LLVM、逐 Pass Diff、CFG 和自举仪表盘。启动：
+
+```bash
+bash playground/serve.sh
+```
+
+访问 http://127.0.0.1:8000，详见 [Playground 启动与接口说明](playground/README.md)。编译器核心和既有复现命令保持完整。
+
 ## 使用编译器
 
 ```bash

@@ -1,0 +1,164 @@
+{
+  "verified_at": "2026-11-18T02:06:50.475689+08:00",
+  "branch": "codex/astercc-playground",
+  "baseline": "35bdc5c",
+  "health": {
+    "ready": true,
+    "compiler": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/bootstrap/O2/stage3",
+    "compiler_sha256": "bca8b2e339337a42b3a2e4b0bab4a8a87863898b10f46caacd10174ae601e132",
+    "artifact_root": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三",
+    "checks": {
+      "compiler": true,
+      "runtime": true,
+      "clang": true,
+      "stdlib": true
+    },
+    "version": "AsterCC 0.1.0 (Aster SSA / LLVM 18)",
+    "repair_command": "cd \"/mnt/d/学习资料/专业课/大三上/编译技术/实验三\" && bash scripts/reproduce.sh"
+  },
+  "current_stage_hashes": [
+    {
+      "optimization": 0,
+      "stage": 1,
+      "binary": "5e9c2bb0f54b1db729b1b1b9196dac9e0e436c2078d9ff027eae6e75590f715e",
+      "llvm": "ce81ce0440f291a6fdd6c9436fa27d07d898f7352b43899ad93edb39403090bf",
+      "matches_record": true
+    },
+    {
+      "optimization": 0,
+      "stage": 2,
+      "binary": "5e9c2bb0f54b1db729b1b1b9196dac9e0e436c2078d9ff027eae6e75590f715e",
+      "llvm": "ce81ce0440f291a6fdd6c9436fa27d07d898f7352b43899ad93edb39403090bf",
+      "matches_record": true
+    },
+    {
+      "optimization": 0,
+      "stage": 3,
+      "binary": "5e9c2bb0f54b1db729b1b1b9196dac9e0e436c2078d9ff027eae6e75590f715e",
+      "llvm": "ce81ce0440f291a6fdd6c9436fa27d07d898f7352b43899ad93edb39403090bf",
+      "matches_record": true
+    },
+    {
+      "optimization": 2,
+      "stage": 1,
+      "binary": "bca8b2e339337a42b3a2e4b0bab4a8a87863898b10f46caacd10174ae601e132",
+      "llvm": "345090674242995ccdbc22e950a855e5991333a980cf43aa72c379ddea75995d",
+      "matches_record": true
+    },
+    {
+      "optimization": 2,
+      "stage": 2,
+      "binary": "bca8b2e339337a42b3a2e4b0bab4a8a87863898b10f46caacd10174ae601e132",
+      "llvm": "345090674242995ccdbc22e950a855e5991333a980cf43aa72c379ddea75995d",
+      "matches_record": true
+    },
+    {
+      "optimization": 2,
+      "stage": 3,
+      "binary": "bca8b2e339337a42b3a2e4b0bab4a8a87863898b10f46caacd10174ae601e132",
+      "llvm": "345090674242995ccdbc22e950a855e5991333a980cf43aa72c379ddea75995d",
+      "matches_record": true
+    }
+  ],
+  "compiler_source_provenance": [
+    {
+      "path": "compiler/frontend.aster",
+      "matches": true
+    },
+    {
+      "path": "compiler/llvm.aster",
+      "matches": true
+    },
+    {
+      "path": "compiler/main.aster",
+      "matches": true
+    },
+    {
+      "path": "compiler/model.aster",
+      "matches": true
+    },
+    {
+      "path": "compiler/optimize.aster",
+      "matches": true
+    },
+    {
+      "path": "compiler/ssa.aster",
+      "matches": true
+    },
+    {
+      "path": "runtime/runtime.c",
+      "matches": true
+    },
+    {
+      "path": "stage0/compiler.cpp",
+      "matches": true
+    },
+    {
+      "path": "stage0/support.hpp",
+      "matches": true
+    },
+    {
+      "path": "std/collections.aster",
+      "matches": true
+    },
+    {
+      "path": "std/io.aster",
+      "matches": true
+    },
+    {
+      "path": "std/text.aster",
+      "matches": true
+    }
+  ],
+  "browser_checks": 25,
+  "backend_tests": 7,
+  "frontend_tests": 2,
+  "source_sha256": {
+    ".gitignore": "2beb84b8c8c43723ea44a164b3a125caffcfff272d11215130fb1fe397c374be",
+    "README.md": "44830c938dc0376dc5e48dbfef600274906f2d317a5d7d00029822b897d4a383",
+    "playground/README.md": "698a06378e8f0e6c9b9352e9cf7ec53e11be17849403f0b78a5eb7a0d50a510e",
+    "playground/check.sh": "aa0663423b0fd6aaa6102d6b0cf245ad97deea85f7a7210499675739cf3059e0",
+    "playground/pyproject.toml": "a4c7913a5fec92a6bec1cbeb98d6277974499fdb76daaac1c43c6107072f6a48",
+    "playground/serve.sh": "312699eda6587eefbf4a5a947dd552b37074407c106a2fcc91dccb22b7f00a3b",
+    "playground/server/app.py": "0ca5002f19b015d5adc09bf7b3cb2a8fc904680da20efedf6d1e0e232f782f79",
+    "playground/server/ir.py": "01665cba513d03c9d3f33afe8674d8eeddebaef0b9dd7d77cab1f161f853d17e",
+    "playground/tests/browser-smoke.js": "676afc5126d104384ad15cb27b15f4a44f870f86ff51c8be8698db9ece5ae8cc",
+    "playground/tests/test_adapter.py": "b5261868f6cc2dce626878afcff9403daa8e78e2df75342ac6ed4ae2e7723eb6",
+    "playground/uv.lock": "b7d43312640aeebe2ddc57d63debc802cdaa6752eb0eca47cfcd900e1b33be99",
+    "playground/web/.prettierrc.json": "401ce6b6c26b4914434a891badd3d9d331fa8a6ba6f44dc2f0cb4fc0a5263255",
+    "playground/web/components.json": "b0ead6c0dbc34238a4a3f13cbcb212b67e5630b2b9d236b871f1da486641cd1b",
+    "playground/web/index.html": "46f6e3cba24d168929793419b186e66e1334cb0654227dd36985e549cdddb533",
+    "playground/web/package-lock.json": "16561ece2c782e2f2bdc548a1e2ef23b331c54afb1babfc4b236899b4ac1544a",
+    "playground/web/package.json": "0121f623781870d65b19b28673fd56437b6d634cf4be6c4806457aac51d329c2",
+    "playground/web/public/favicon.svg": "a22e4715ccffc7d9aa038240e49d7af7455bbffdbfe9131e422e7381c46c6f63",
+    "playground/web/src/App.tsx": "6d0e2b046be52ac2db98d939c96847d343865bc325ccd8b5ddf46b01d7401812",
+    "playground/web/src/api.ts": "e39e808b4d456995a3bdfc133df6f6683bcc562c2e0738d54df7f22a957cf6df",
+    "playground/web/src/components/CFG.tsx": "61e89d74e1adcf0c68ca60eb6410b365cae25924c15c9c89515768c0263bf428",
+    "playground/web/src/components/Chart.tsx": "60f21ee5c6634bacb784e24e57d889bbe070b5d79f7fc6a5f465f429ee2f1b63",
+    "playground/web/src/components/Dashboard.tsx": "99a8ca5a6f3964060ec913466ade34d24f48683eebe29d5cca0d876cf35137f0",
+    "playground/web/src/components/Explorer.tsx": "4c67f244bf1ac98c125d627a8ab9bb3c8220f04f3c48be390ceab8f13b2120a4",
+    "playground/web/src/components/SafeDiff.tsx": "eb17830847e2c93db6d219c62613e3732193af4c52d37abb35d47a9d977a5c14",
+    "playground/web/src/components/Workbench.tsx": "55956b3dcf5033f4f62770d0e30d14766ba19b5b37de6f9d071e39bf03930426",
+    "playground/web/src/components/common.tsx": "b6b059cc756991aedcfa11dd82e220c2c0805bd9a54b1451de86f4292ea9aa93",
+    "playground/web/src/components/ui/button.tsx": "9542c4cae127a3fb5696417172c71d999c8b28435cd91d0ef4a235b83c9f39dd",
+    "playground/web/src/components/ui/tooltip.tsx": "841e3eb8e116aec63b512bb58936e43905232feb6656dd7d698e72f969748c02",
+    "playground/web/src/editor.ts": "05f294673ec282d6b0e889a49d71b0cfa3004a7e2467bbf21c099020022f8c15",
+    "playground/web/src/ir-fixtures.json": "91297a352f8df83f5bdc25def06e980c713958b13a79ce89d8c1bc0f93c1f7d2",
+    "playground/web/src/irChanges.test.ts": "4ed75ee48e2d80ad2d1167e9c8e1f8e128a139a54b3cd3a8f3b9424e37a023fd",
+    "playground/web/src/irChanges.ts": "b3cc0e74854ce9dcd9df3045843e7eed04b6dbd586808b312fcb7ef02fc8bd55",
+    "playground/web/src/lib/utils.ts": "c407b940a1b71992691321d7162086f17af79fa371d0e4693926714048699b63",
+    "playground/web/src/main.tsx": "d60d89159e4525afedbb2ed6808c1670fabc55cdd5b332a1ac6c51fe38f8c407",
+    "playground/web/src/styles.css": "b8d439bbe95795e3b810cc01249ba76a4771d343069414845d19dcd0e3ec9d48",
+    "playground/web/src/types.ts": "be651ed6842cb8b4182f3585d31515419cfe23378b823d012af7fb5938c0fdbb",
+    "playground/web/src/vite-env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+    "playground/web/tsconfig.json": "a26f4984a2178c2ad58ae1559faf787edb039296693568851b73f96a8fbc4b99",
+    "playground/web/vite.config.ts": "dd63b5bcfb0cf5e810e59764db61c699a7c2679e2ece40064efc215daa22db46"
+  },
+  "screenshots_sha256": {
+    "bootstrap.png": "60b9c043e62cbff27b9dd9a97ea6228eb50fa05b0267420f8d30dc0b8d1731a2",
+    "cfg.png": "c5b3a175d57cbec34854f7a763e92abc5cf2ecbd635ad31321277b67b05c9fdf",
+    "mobile.png": "1d9c99ad3d22eab364e2b7c8975acaf588339a80b5c823c60233bf53895b2c36",
+    "optimization.png": "410aec3020d423db5d0377accd04bb95bdedb55f29c676301601f8c008a944e4",
+    "workbench.png": "c56d1a4498e5620c8c37d4f29f75d870e09a773ac788f25672641fae74dc3b2e"
+  }
+}
