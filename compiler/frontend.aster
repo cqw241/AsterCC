@@ -1,0 +1,538 @@
+// Lexer and Pratt parser. AST children are arena IDs, never host pointers.
+fn alpha(c: i64) -> bool {
+    return c >= 65 && c <= 90 || c >= 97 && c <= 122 || c == 95;
+}
+
+fn digit(c: i64) -> bool {
+    return c >= 48 && c <= 57;
+}
+
+fn lex(s: State, file: i64) -> i64 {
+    let src: str = s.sources[file];
+    let first: i64 = len(s.tokens);
+    var i: i64 = 0;
+    while i < len(src) {
+        let c: i64 = byte(src, i);
+        let begin: i64 = i;
+        var kind: i64 = 4;
+        var text: str = "";
+        if c == 32 || c == 9 || c == 10 || c == 13 {
+            i = i + 1;
+            continue;
+        }
+        if c == 47 && i + 1 < len(src) && byte(src, i + 1) == 47 {
+            while i < len(src) && byte(src, i) != 10 {
+                i = i + 1;
+            }
+            continue;
+        }
+        if c == 47 && i + 1 < len(src) && byte(src, i + 1) == 42 {
+            i = i + 2;
+            var level: i64 = 1;
+            while i < len(src) && level > 0 {
+                if i + 1 < len(src) && slice(src, i, 2) == "/*" {
+                    level = level + 1;
+                    i = i + 2;
+                } else {
+                    if i + 1 < len(src) && slice(src, i, 2) == "*/" {
+                        level = level - 1;
+                        i = i + 2;
+                    } else {
+                        i = i + 1;
+                    }
+                }
+            }
+            if level != 0 {
+                push(s.tokens, Token {
+                    text: "", kind: 0, pos: begin, file: file,
+                });
+                error(s, len(s.tokens) - 1, "unterminated comment");
+            }
+            continue;
+        }
+        if alpha(c) {
+            kind = 1;
+            i = i + 1;
+            while i < len(src) &&(alpha(byte(src, i)) || digit(byte(src, i))) {
+                i = i + 1;
+            }
+            text = slice(src, begin, i - begin);
+        } else {
+            if digit(c) {
+                kind = 2;
+                i = i + 1;
+                while i < len(src) &&(alpha(byte(src, i)) || digit(byte(src, i))) {
+                    i = i + 1;
+                }
+                text = slice(src, begin, i - begin);
+                var base: i64 = 10;
+                var k: i64 = 0;
+                var limit: i64 = 1844674407370955161;
+                var remainder: i64 = 5;
+                if starts(text, "0x") || starts(text, "0X") {
+                    base = 16;
+                    k = 2;
+                    limit = 1152921504606846975;
+                    remainder = 15;
+                }
+                var valid: bool = k < len(text);
+                var value: i64 = 0;
+                while k < len(text) {
+                    let ch: i64 = byte(text, k);
+                    var d: i64 = - 1;
+                    if digit(ch) {
+                        d = ch - 48;
+                    } else {
+                        if ch >= 65 && ch <= 70 {
+                            d = ch - 55;
+                        } else {
+                            if ch >= 97 && ch <= 102 {
+                                d = ch - 87;
+                            }
+                        }
+                    }
+                    if d < 0 || d >= base || value < 0 || value > limit || value == limit && d > remainder {
+                        valid = false;
+                    }
+                    value = value * base + d;
+                    k = k + 1;
+                }
+                if ! valid {
+                    push(s.tokens, Token {
+                        text: text, kind: 2, pos: begin, file: file,
+                    });
+                    error(s, len(s.tokens) - 1, "invalid integer literal (expected a 64-bit decimal or hexadecimal value)");
+                }
+            } else {
+                if c == 34 {
+                    kind = 3;
+                    i = i + 1;
+                    var chars: []str = [];
+                    while i < len(src) && byte(src, i) != 34 {
+                        var ch: i64 = byte(src, i);
+                        i = i + 1;
+                        if ch == 92 {
+                            if i == len(src) {
+                                break;
+                            }
+                            ch = byte(src, i);
+                            i = i + 1;
+                            if ch == 110 {
+                                ch = 10;
+                            } else {
+                                if ch == 116 {
+                                    ch = 9;
+                                } else {
+                                    if ch == 114 {
+                                        ch = 13;
+                                    } else {
+                                        if ch == 48 {
+                                            ch = 0;
+                                        } else {
+                                            if ch != 34 && ch != 92 {
+                                                push(s.tokens, Token {
+                                                    text: "", kind: 0, pos: i - 1, file: file,
+                                                });
+                                                error(s, len(s.tokens) - 1, "invalid escape");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        push(chars, chr(ch));
+                    }
+                    if i == len(src) {
+                        push(s.tokens, Token {
+                            text: "", kind: 0, pos: begin, file: file,
+                        });
+                        error(s, len(s.tokens) - 1, "unterminated string");
+                    }
+                    i = i + 1;
+                    text = join(chars, "");
+                } else {
+                    text = chr(c);
+                    i = i + 1;
+                    if i < len(src) {
+                        let pair: str = slice(src, begin, 2);
+                        if pair == "->" || pair == "::" || pair == "==" || pair == "!=" || pair == "<=" || pair == ">=" || pair == "&&" || pair == "||" || pair == "<<" || pair == ">>" {
+                            text = pair;
+                            i = i + 1;
+                        }
+                    }
+                    if find(["(", ")", "{", "}", "[", "]", ",", ";", ":", ".", "+", "-", "*", "/", "%", "&", "|", "^",
+                    "~", "!", "=", "<", ">", "->", "::", "==", "!=", "<=", ">=", "&&", "||", "<<", ">>"], text) < 0 {
+                        push(s.tokens, Token {
+                            text: text, kind: 4, pos: begin, file: file,
+                        });
+                        error(s, len(s.tokens) - 1, "invalid character");
+                    }
+                }
+            }
+        }
+        push(s.tokens, Token {
+            text: text, kind: kind, pos: begin, file: file,
+        });
+    }
+    push(s.tokens, Token {
+        text: "<eof>", kind: 0, pos: len(src), file: file,
+    });
+    return first;
+}
+
+fn precedence(op: str) -> i64 {
+    if op == "||" {
+        return 1;
+    }
+    if op == "&&" {
+        return 2;
+    }
+    if op == "|" {
+        return 3;
+    }
+    if op == "^" {
+        return 4;
+    }
+    if op == "&" {
+        return 5;
+    }
+    if op == "==" || op == "!=" {
+        return 6;
+    }
+    if op == "<" || op == ">" || op == "<=" || op == ">=" {
+        return 7;
+    }
+    if op == "<<" || op == ">>" {
+        return 8;
+    }
+    if op == "+" || op == "-" {
+        return 9;
+    }
+    if op == "*" || op == "/" || op == "%" {
+        return 10;
+    }
+    return - 1;
+}
+
+fn expression(s: State, minp: i64) -> i64 {
+    let tok: i64 = s.cursor[0];
+    let t: Token = s.tokens[tok];
+    var n: i64 = - 1;
+    if eat(s, "(") {
+        n = expression(s, 0);
+        need(s, ")");
+    } else {
+        if eat(s, "[") {
+            var xs: []i64 = [];
+            if peek(s) != "]" {
+                push(xs, expression(s, 0));
+                while eat(s, ",") && peek(s) != "]" {
+                    push(xs, expression(s, 0));
+                }
+            }
+            need(s, "]");
+            n = node(s, "array", "", "", - 1, - 1, - 1, xs, tok);
+        } else {
+            if t.kind == 4 &&(t.text == "!" || t.text == "-" || t.text == "~") {
+                take(s);
+                n = node(s, "unary", t.text, "", expression(s, 11), - 1, - 1, [], tok);
+            } else {
+                if t.kind == 2 {
+                    take(s);
+                    n = node(s, "int", t.text, "i64", - 1, - 1, - 1, [], tok);
+                } else {
+                    if t.kind == 3 {
+                        take(s);
+                        n = node(s, "string", t.text, "str", - 1, - 1, - 1, [], tok);
+                    } else {
+                        if t.text == "true" || t.text == "false" {
+                            take(s);
+                            n = node(s, "bool", t.text, "bool", - 1, - 1, - 1, [], tok);
+                        } else {
+                            if t.kind == 1 {
+                                let text: str = qualified(s);
+                                n = node(s, "name", text, "", - 1, - 1, - 1, [], tok);
+                                // Uppercase identifiers followed by braces are record literals. This
+                                // removes the condition/block ambiguity without backtracking.
+                                if byte(text, 0) >= 65 && byte(text, 0) <= 90 && eat(s, "{") {
+                                    var fields: []i64 = [];
+                                    while peek(s) != "}" {
+                                        let ft: i64 = s.cursor[0];
+                                        let field: str = name(s);
+                                        need(s, ":");
+                                        let value: i64 = expression(s, 0);
+                                        push(fields, node(s, "init", field, "", value, - 1, - 1, [], ft));
+                                        if ! eat(s, ",") {
+                                            break;
+                                        }
+                                    }
+                                    need(s, "}");
+                                    n = node(s, "record", text, text, - 1, - 1, - 1, fields, tok);
+                                }
+                            } else {
+                                error(s, tok, "expected expression");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    while true {
+        if eat(s, "(") {
+            var xs: []i64 = [];
+            if peek(s) != ")" {
+                push(xs, expression(s, 0));
+                while eat(s, ",") {
+                    push(xs, expression(s, 0));
+                }
+            }
+            need(s, ")");
+            n = node(s, "call", "", "", n, - 1, - 1, xs, tok);
+        } else {
+            if eat(s, "[") {
+                let idx: i64 = expression(s, 0);
+                need(s, "]");
+                n = node(s, "index", "", "", n, idx, - 1, [], tok);
+            } else {
+                if eat(s, ".") {
+                    let field: str = name(s);
+                    n = node(s, "field", field, "", n, - 1, - 1, [], tok);
+                } else {
+                    if eat(s, "as") {
+                        let ty: str = parse_type(s);
+                        n = node(s, "cast", "", ty, n, - 1, - 1, [], tok);
+                    } else {
+                        let p: i64 = precedence(peek(s));
+                        if p < minp {
+                            break;
+                        }
+                        let op: str = take(s);
+                        let rhs: i64 = expression(s, p + 1);
+                        n = node(s, "binary", op, "", n, rhs, - 1, [], tok);
+                    }
+                }
+            }
+        }
+    }
+    return n;
+}
+
+fn parse_block(s: State) -> i64 {
+    let tok: i64 = s.cursor[0];
+    need(s, "{");
+    var xs: []i64 = [];
+    while peek(s) != "}" && peek(s) != "<eof>" {
+        push(xs, statement(s));
+    }
+    need(s, "}");
+    return node(s, "block", "", "", - 1, - 1, - 1, xs, tok);
+}
+
+fn statement(s: State) -> i64 {
+    let tok: i64 = s.cursor[0];
+    let t: str = peek(s);
+    if t == "{" {
+        return parse_block(s);
+    }
+    if t == "let" || t == "var" {
+        take(s);
+        let text: str = name(s);
+        var ty: str = "";
+        if eat(s, ":") {
+            ty = parse_type(s);
+        }
+        need(s, "=");
+        let value: i64 = expression(s, 0);
+        need(s, ";");
+        var mut: i64 = 0;
+        if t == "var" {
+            mut = 1;
+        }
+        return node(s, "decl", text, ty, value, mut, - 1, [], tok);
+    }
+    if eat(s, "if") {
+        let cond: i64 = expression(s, 0);
+        let yes: i64 = parse_block(s);
+        var no: i64 = - 1;
+        if eat(s, "else") {
+            if peek(s) == "if" {
+                no = statement(s);
+            } else {
+                no = parse_block(s);
+            }
+        }
+        return node(s, "if", "", "", cond, yes, no, [], tok);
+    }
+    if eat(s, "while") {
+        let cond: i64 = expression(s, 0);
+        let body: i64 = parse_block(s);
+        return node(s, "while", "", "", cond, body, - 1, [], tok);
+    }
+    if eat(s, "return") {
+        var value: i64 = - 1;
+        if peek(s) != ";" {
+            value = expression(s, 0);
+        }
+        need(s, ";");
+        return node(s, "return", "", "", value, - 1, - 1, [], tok);
+    }
+    if eat(s, "break") {
+        need(s, ";");
+        return node(s, "break", "", "", - 1, - 1, - 1, [], tok);
+    }
+    if eat(s, "continue") {
+        need(s, ";");
+        return node(s, "continue", "", "", - 1, - 1, - 1, [], tok);
+    }
+    let lhs: i64 = expression(s, 0);
+    if eat(s, "=") {
+        let rhs: i64 = expression(s, 0);
+        need(s, ";");
+        return node(s, "assign", "", "", lhs, rhs, - 1, [], tok);
+    }
+    need(s, ";");
+    return node(s, "expr", "", "", lhs, - 1, - 1, [], tok);
+}
+
+fn module_file(root: str, module: str) -> str {
+    var chars: []str = [];
+    var i: i64 = 0;
+    while i < len(module) {
+        if byte(module, i) == 46 {
+            push(chars, "/");
+        } else {
+            push(chars, chr(byte(module, i)));
+        }
+        i = i + 1;
+    }
+    return root + "/" + join(chars, "") + ".aster";
+}
+
+fn load_module(s: State, path: str, module: str) -> void {
+    if find(s.paths, path) >= 0 {
+        return;
+    }
+    let file: i64 = len(s.paths);
+    push(s.paths, path);
+    push(s.sources, read_file(path));
+    push(s.modules, module);
+    let saved: i64 = s.cursor[0];
+    s.cursor[0] = lex(s, file);
+    while peek(s) != "<eof>" {
+        let tok: i64 = s.cursor[0];
+        if eat(s, "import") {
+            var m: str = name(s);
+            var alias: str = m;
+            while eat(s, ".") {
+                alias = name(s);
+                m = m + "." + alias;
+            }
+            need(s, ";");
+            push(s.imports, Import {
+                owner: file, alias: alias, module: m,
+            });
+            load_module(s, module_file(s.root, m), m);
+        } else {
+            if eat(s, "struct") {
+                let text: str = name(s);
+                if byte(text, 0) < 65 || byte(text, 0) > 90 {
+                    error(s, tok, "record names must begin with an uppercase letter");
+                }
+                if record_id(s, text) >= 0 {
+                    error(s, tok, "duplicate record " + text);
+                }
+                need(s, "{");
+                var names: []str = [];
+                var types: []str = [];
+                while peek(s) != "}" {
+                    let field: str = name(s);
+                    if find(names, field) >= 0 {
+                        error(s, s.cursor[0] - 1, "duplicate field");
+                    }
+                    push(names, field);
+                    need(s, ":");
+                    push(types, parse_type(s));
+                    if ! eat(s, ",") {
+                        break;
+                    }
+                }
+                need(s, "}");
+                push(s.records, Record {
+                    name: text, names: names, types: types, tok: tok,
+                });
+            } else {
+                if eat(s, "enum") {
+                    let text: str = name(s);
+                    if record_id(s, text) >= 0 {
+                        error(s, tok, "duplicate type " + text);
+                    }
+                    need(s, "{");
+                    var names: []str = [];
+                    var value: i64 = 0;
+                    while peek(s) != "}" {
+                        let member: str = name(s);
+                        if find(names, member) >= 0 {
+                            error(s, tok, "duplicate enum member " + member);
+                        }
+                        if eat(s, "=") {
+                            if s.tokens[s.cursor[0]].kind != 2 {
+                                error(s, s.cursor[0], "enum value must be an integer literal");
+                            }
+                            value = parse_int(take(s));
+                        }
+                        push(names, member);
+                        push(s.functions, Function {
+                            name: text + "::" + member, module: module, names: [], types: [], ret: text, body: node(s, "enumvalue",
+                            itoa(value), text, - 1, - 1, - 1, [], tok), tok: tok,
+                        });
+                        value = value + 1;
+                        if ! eat(s, ",") {
+                            break;
+                        }
+                    }
+                    need(s, "}");
+                    push(s.records, Record {
+                        name: text, names: [], types: ["$enum"], tok: tok,
+                    });
+                } else {
+                    if eat(s, "fn") {
+                        let text: str = name(s);
+                        var f: i64 = 0;
+                        while f < len(s.functions) {
+                            if s.functions[f].name == text && s.functions[f].module == module {
+                                error(s, tok, "duplicate function " + text);
+                            }
+                            f = f + 1;
+                        }
+                        need(s, "(");
+                        var names: []str = [];
+                        var types: []str = [];
+                        while peek(s) != ")" {
+                            let p: str = name(s);
+                            if find(names, p) >= 0 {
+                                error(s, tok, "duplicate parameter");
+                            }
+                            push(names, p);
+                            need(s, ":");
+                            push(types, parse_type(s));
+                            if ! eat(s, ",") {
+                                break;
+                            }
+                        }
+                        need(s, ")");
+                        need(s, "->");
+                        let ret: str = parse_type(s);
+                        let body: i64 = parse_block(s);
+                        push(s.functions, Function {
+                            name: text, module: module, names: names, types: types, ret: ret, body: body, tok: tok,
+                        });
+                    } else {
+                        error(s, tok, "expected import, struct, enum or fn");
+                    }
+                }
+            }
+        }
+    }
+    s.cursor[0] = saved;
+}

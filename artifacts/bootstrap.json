@@ -1,0 +1,95 @@
+{
+  "source_sha256": {
+    "compiler/frontend.aster": "0aca45280adab65de230c106f86c18aa982a870e739a4b0c62a93ed370072d09",
+    "compiler/llvm.aster": "d3d59e15e748d95e07c0dc23d59ee4bf2c5ec69a711a798490ab458d11088fbf",
+    "compiler/main.aster": "1ba527654a5fbc21afe1dc80d280c261784b389a1083b016c750db4684689b8f",
+    "compiler/model.aster": "956bd5cb2b7bdc63e1e6e8687b4fd5d2613b0b612a0f483bcc9a91126d0d3e2a",
+    "compiler/optimize.aster": "61c9678ebbd7635d8bd2a0804fed01f49c8b9921e7f3e80492b6858618f9b6d4",
+    "compiler/ssa.aster": "da7d22d99bdca6db26954f36c89401c96754e9e45d50118775e0e26ff29eae9c",
+    "runtime/runtime.c": "c8de34c6112f7c5d2d7fd77fc3dec4b6c1699f090cf5a4c6ccfd7e91f77b3c65",
+    "stage0/compiler.cpp": "e3ace4d0fe4cee968b140342727563d5e968ee960ccc86ff858e20531412ee91",
+    "stage0/support.hpp": "e85b0db4f6b3d61c177723ccfacf6b38067775ce11c7e0aae0b1dd4fcd39be2a",
+    "std/collections.aster": "94c8169add64dd7c445f4257b5c6ccc745d602b2b03cedf1de1057569a507046",
+    "std/io.aster": "a3742f15df20632d1c2b7b4a0d95c784fa25dca7c3fe81a50de117163c5bcf6f",
+    "std/text.aster": "88c11a8d289b64436a096fc9936fe1feda972e542d5b28b50307bbe6e5c740de"
+  },
+  "runtime_archive_sha256": "4ef288abbf9600f9d96f842d922a47af1f86a775e76dadda4197d63bdd311018",
+  "stages": [
+    {
+      "optimization": 0,
+      "stage": 1,
+      "producer": "build/astercc0",
+      "binary": "build/bootstrap/O0/stage1",
+      "binary_sha256": "5e9c2bb0f54b1db729b1b1b9196dac9e0e436c2078d9ff027eae6e75590f715e",
+      "llvm_sha256": "ce81ce0440f291a6fdd6c9436fa27d07d898f7352b43899ad93edb39403090bf",
+      "binary_bytes": 345376,
+      "seconds": 0.521495,
+      "trace_files": 98
+    },
+    {
+      "optimization": 0,
+      "stage": 2,
+      "producer": "build/bootstrap/O0/stage1",
+      "binary": "build/bootstrap/O0/stage2",
+      "binary_sha256": "5e9c2bb0f54b1db729b1b1b9196dac9e0e436c2078d9ff027eae6e75590f715e",
+      "llvm_sha256": "ce81ce0440f291a6fdd6c9436fa27d07d898f7352b43899ad93edb39403090bf",
+      "binary_bytes": 345376,
+      "seconds": 0.473995,
+      "trace_files": 98
+    },
+    {
+      "optimization": 0,
+      "stage": 3,
+      "producer": "build/bootstrap/O0/stage2",
+      "binary": "build/bootstrap/O0/stage3",
+      "binary_sha256": "5e9c2bb0f54b1db729b1b1b9196dac9e0e436c2078d9ff027eae6e75590f715e",
+      "llvm_sha256": "ce81ce0440f291a6fdd6c9436fa27d07d898f7352b43899ad93edb39403090bf",
+      "binary_bytes": 345376,
+      "seconds": 0.481481,
+      "trace_files": 98
+    },
+    {
+      "optimization": 2,
+      "stage": 1,
+      "producer": "build/astercc0",
+      "binary": "build/bootstrap/O2/stage1",
+      "binary_sha256": "bca8b2e339337a42b3a2e4b0bab4a8a87863898b10f46caacd10174ae601e132",
+      "llvm_sha256": "345090674242995ccdbc22e950a855e5991333a980cf43aa72c379ddea75995d",
+      "binary_bytes": 242976,
+      "seconds": 1.861404,
+      "trace_files": 1078
+    },
+    {
+      "optimization": 2,
+      "stage": 2,
+      "producer": "build/bootstrap/O2/stage1",
+      "binary": "build/bootstrap/O2/stage2",
+      "binary_sha256": "bca8b2e339337a42b3a2e4b0bab4a8a87863898b10f46caacd10174ae601e132",
+      "llvm_sha256": "345090674242995ccdbc22e950a855e5991333a980cf43aa72c379ddea75995d",
+      "binary_bytes": 242976,
+      "seconds": 2.717027,
+      "trace_files": 1078
+    },
+    {
+      "optimization": 2,
+      "stage": 3,
+      "producer": "build/bootstrap/O2/stage2",
+      "binary": "build/bootstrap/O2/stage3",
+      "binary_sha256": "bca8b2e339337a42b3a2e4b0bab4a8a87863898b10f46caacd10174ae601e132",
+      "llvm_sha256": "345090674242995ccdbc22e950a855e5991333a980cf43aa72c379ddea75995d",
+      "binary_bytes": 242976,
+      "seconds": 2.707745,
+      "trace_files": 1078
+    }
+  ],
+  "fixed_point_O0": true,
+  "fixed_point_O2": true,
+  "cross_stage_traces_equal": true,
+  "standalone": {
+    "seed_hidden": true,
+    "relocated": true,
+    "stdout": "6765\n",
+    "no_libstdcpp": true,
+    "ldd": "\tlinux-vdso.so.1 (0x000071b4c6575000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x000071b4c6200000)\n\t/lib64/ld-linux-x86-64.so.2 (0x000071b4c6577000)\n"
+  }
+}

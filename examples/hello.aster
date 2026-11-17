@@ -1,0 +1,11 @@
+fn main() -> i64 {
+    println("Hello from AsterCC");
+    var n: i64 = 0;
+    var sum: i64 = 0;
+    while n < 10 {
+        sum = sum + n;
+        n = n + 1;
+    }
+    println_int(sum);
+    return 0;
+}

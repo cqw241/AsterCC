@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "verified": [
+    "loop-phi",
+    "sccp-elimination",
+    "dce-elimination",
+    "gvn-elimination",
+    "licm-motion"
+  ]
+}

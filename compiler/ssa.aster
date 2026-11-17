@@ -1,0 +1,867 @@
+// Braun-style on-demand SSA. An unsealed block may still acquire backedges;
+// its incomplete phis are completed only when every predecessor is known.
+fn new_ir(s: State, fid: i64) -> IR {
+    return IR {
+        s: s, fid: fid, ins: [], blocks: [], vars: [], active: [], current: [0], depth: [0], breaks: [],
+        continues: [],
+    };
+}
+
+fn new_block(g: IR) -> i64 {
+    let id: i64 = len(g.blocks);
+    push(g.blocks, Block {
+        code: [], preds: [], defs: [], pending: [], sealed: false, term: "", values: [], targets: [], alive: true,
+    });
+    return id;
+}
+
+fn emit(g: IR, op: str, ty: str, a: i64, b: i64, xs: []i64, text: str) -> i64 {
+    let id: i64 = len(g.ins);
+    let block: i64 = g.current[0];
+    push(g.ins, Inst {
+        op: op, ty: ty, a: a, b: b, args: xs, labels: [], text: text, block: block, repl: - 1, dead: false,
+    });
+    push(g.blocks[block].code, id);
+    return id;
+}
+
+fn canonical(g: IR, id: i64) -> i64 {
+    var n: i64 = id;
+    while n >= 0 && g.ins[n].repl >= 0 {
+        n = g.ins[n].repl;
+    }
+    return n;
+}
+
+fn constant(g: IR, ty: str, n: i64) -> i64 {
+    return emit(g, "const", ty, - 1, - 1, [], itoa(n));
+}
+
+fn write_var(g: IR, block: i64, varid: i64, value: i64) -> void {
+    while len(g.blocks[block].defs) <= varid {
+        push(g.blocks[block].defs, - 1);
+    }
+    g.blocks[block].defs[varid] = value;
+}
+
+fn trivial_phi(g: IR, id: i64) -> i64 {
+    var same: i64 = - 1;
+    var i: i64 = 0;
+    while i < len(g.ins[id].args) {
+        let v: i64 = canonical(g, g.ins[id].args[i]);
+        if v != id {
+            if same >= 0 && same != v {
+                return id;
+            }
+            same = v;
+        }
+        i = i + 1;
+    }
+    if same >= 0 {
+        g.ins[id].repl = same;
+    }
+    return canonical(g, id);
+}
+
+fn make_phi(g: IR, block: i64, varid: i64) -> i64 {
+    let old: i64 = g.current[0];
+    g.current[0] = block;
+    let id: i64 = emit(g, "phi", g.vars[varid].ty, - 1, - 1, [], itoa(varid));
+    g.current[0] = old;
+    write_var(g, block, varid, id);
+    return id;
+}
+
+fn read_var(g: IR, block: i64, varid: i64) -> i64 {
+    if varid < len(g.blocks[block].defs) && g.blocks[block].defs[varid] >= 0 {
+        return canonical(g, g.blocks[block].defs[varid]);
+    }
+    var value: i64 = - 1;
+    if ! g.blocks[block].sealed {
+        value = make_phi(g, block, varid);
+        push(g.blocks[block].pending, value);
+    } else {
+        if len(g.blocks[block].preds) == 1 {
+            value = read_var(g, g.blocks[block].preds[0], varid);
+        } else {
+            if len(g.blocks[block].preds) == 0 {
+                error(g.s, g.s.functions[g.fid].tok, "variable has no reaching definition: " + g.vars[varid].name);
+            }
+            value = make_phi(g, block, varid);
+            var i: i64 = 0;
+            while i < len(g.blocks[block].preds) {
+                let p: i64 = g.blocks[block].preds[i];
+                push(g.ins[value].args, read_var(g, p, varid));
+                push(g.ins[value].labels, p);
+                i = i + 1;
+            }
+            value = trivial_phi(g, value);
+        }
+    }
+    write_var(g, block, varid, value);
+    return value;
+}
+
+fn seal(g: IR, block: i64) -> void {
+    g.blocks[block].sealed = true;
+    var i: i64 = 0;
+    while i < len(g.blocks[block].pending) {
+        let id: i64 = g.blocks[block].pending[i];
+        let varid: i64 = parse_int(g.ins[id].text);
+        var j: i64 = 0;
+        while j < len(g.blocks[block].preds) {
+            let p: i64 = g.blocks[block].preds[j];
+            push(g.ins[id].args, read_var(g, p, varid));
+            push(g.ins[id].labels, p);
+            j = j + 1;
+        }
+        trivial_phi(g, id);
+        i = i + 1;
+    }
+}
+
+fn terminate(g: IR, term: str, values: []i64, targets: []i64) -> void {
+    let b: i64 = g.current[0];
+    g.blocks[b].term = term;
+    g.blocks[b].values = values;
+    g.blocks[b].targets = targets;
+    var i: i64 = 0;
+    while i < len(targets) {
+        if ! has(g.blocks[targets[i]].preds, b) {
+            push(g.blocks[targets[i]].preds, b);
+        }
+        i = i + 1;
+    }
+}
+
+fn declare(g: IR, n: str, ty: str, mut: bool, tok: i64) -> i64 {
+    var i: i64 = len(g.active) - 1;
+    while i >= 0 {
+        let id: i64 = g.active[i];
+        if g.vars[id].depth != g.depth[0] {
+            break;
+        }
+        if g.vars[id].name == n {
+            error(g.s, tok, "duplicate local " + n);
+        }
+        i = i - 1;
+    }
+    let id: i64 = len(g.vars);
+    push(g.vars, Variable {
+        name: n, ty: ty, writable: mut, depth: g.depth[0],
+    });
+    push(g.active, id);
+    return id;
+}
+
+fn lookup(g: IR, n: str) -> i64 {
+    var i: i64 = len(g.active) - 1;
+    while i >= 0 {
+        if g.vars[g.active[i]].name == n {
+            return g.active[i];
+        }
+        i = i - 1;
+    }
+    return - 1;
+}
+
+fn expect(g: IR, actual: str, wanted: str, tok: i64) -> void {
+    if actual != wanted {
+        error(g.s, tok, "type mismatch: expected " + wanted + ", got " + actual);
+    }
+}
+
+fn function_id(s: State, text: str, owner: i64) -> i64 {
+    let current: str = s.modules[owner];
+    var wanted: str = current;
+    var member: str = text;
+    var qualified_name: bool = false;
+    var k: i64 = 0;
+    while k + 1 < len(text) {
+        if slice(text, k, 2) == "::" {
+            let alias: str = slice(text, 0, k);
+            var j: i64 = 0;
+            while j < len(s.imports) {
+                if s.imports[j].owner == owner && s.imports[j].alias == alias {
+                    wanted = s.imports[j].module;
+                    member = slice(text, k + 2, len(text) - k - 2);
+                    qualified_name = true;
+                }
+                j = j + 1;
+            }
+            break;
+        }
+        k = k + 1;
+    }
+    let direct: i64 = map_get(s.symbols, wanted + "::" + member);
+    if direct >= 0 {
+        return direct;
+    }
+    if qualified_name {
+        return - 1;
+    }
+    return map_get(s.symbols, "*::" + member);
+}
+
+fn enum_type(s: State, t: str) -> bool {
+    let r: i64 = record_id(s, t);
+    return r >= 0 && len(s.records[r].types) == 1 && s.records[r].types[0] == "$enum";
+}
+
+fn field_id(g: IR, ty: str, field: str, tok: i64) -> i64 {
+    let r: i64 = record_id(g.s, ty);
+    if r < 0 || enum_type(g.s, ty) {
+        error(g.s, tok, "field access requires record");
+    }
+    let i: i64 = find(g.s.records[r].names, field);
+    if i < 0 {
+        error(g.s, tok, "unknown field " + field);
+    }
+    return i;
+}
+
+fn builtin_ret(n: str) -> str {
+    if n == "print" || n == "eprint" || n == "println" || n == "print_int" || n == "println_int" || n == "exit" {
+        return "void";
+    }
+    if n == "read_file" || n == "env" || n == "itoa" || n == "chr" || n == "slice" || n == "join" {
+        return "str";
+    }
+    if n == "write_file" || n == "run" || n == "parse_int" || n == "clock_ns" {
+        return "i64";
+    }
+    if n == "args" {
+        return "[]str";
+    }
+    return "";
+}
+
+fn builtin_types(n: str) -> []str {
+    if n == "print" || n == "eprint" || n == "println" || n == "read_file" || n == "env" || n == "parse_int" {
+        return ["str"];
+    }
+    if n == "print_int" || n == "println_int" || n == "exit" || n == "itoa" || n == "chr" {
+        return ["i64"];
+    }
+    if n == "write_file" {
+        return ["str", "str"];
+    }
+    if n == "slice" {
+        return ["str", "i64", "i64"];
+    }
+    if n == "join" {
+        return ["[]str", "str"];
+    }
+    if n == "run" {
+        return ["[]str"];
+    }
+    return [];
+}
+
+fn lower_call(g: IR, n: Node) -> Value {
+    if g.s.nodes[n.a].tag != "name" {
+        error(g.s, n.tok, "callee must name a function");
+    }
+    let text: str = g.s.nodes[n.a].text;
+    if text == "len" || text == "push" || text == "pop" {
+        var count: i64 = 1;
+        if text == "push" {
+            count = 2;
+        }
+        if len(n.kids) != count {
+            error(g.s, n.tok, "wrong intrinsic arity");
+        }
+        let arr: Value = lower_expr(g, n.kids[0], "");
+        if ! starts(arr.ty, "[]") && !(text == "len" && arr.ty == "str") {
+            error(g.s, n.tok, "intrinsic requires an array or string");
+        }
+        if text == "len" {
+            return Value {
+                id: emit(g, "len", "i64", arr.id, - 1, [], ""), ty: "i64",
+            };
+        }
+        if text == "pop" {
+            return Value {
+                id: emit(g, "pop", "void", arr.id, - 1, [], ""), ty: "void",
+            };
+        }
+        let value: Value = lower_expr(g, n.kids[1], element(arr.ty));
+        expect(g, value.ty, element(arr.ty), n.tok);
+        return Value {
+            id: emit(g, "push", "void", arr.id, value.id, [], value.ty), ty: "void",
+        };
+    }
+    let fid: i64 = function_id(g.s, text, g.s.tokens[n.tok].file);
+    var ret: str = "";
+    var types: []str = [];
+    if fid >= 0 {
+        ret = g.s.functions[fid].ret;
+        types = g.s.functions[fid].types;
+    } else {
+        ret = builtin_ret(text);
+        types = builtin_types(text);
+        if ret == "" {
+            error(g.s, n.tok, "unknown or ambiguous function " + text);
+        }
+    }
+    if len(types) != len(n.kids) {
+        error(g.s, n.tok, "wrong number of arguments to " + text);
+    }
+    var values: []i64 = [];
+    var i: i64 = 0;
+    while i < len(types) {
+        let v: Value = lower_expr(g, n.kids[i], types[i]);
+        expect(g, v.ty, types[i], n.tok);
+        push(values, v.id);
+        i = i + 1;
+    }
+    var target: str = text;
+    if fid >= 0 {
+        target = "@" + itoa(fid);
+    }
+    return Value {
+        id: emit(g, "call", ret, - 1, - 1, values, target), ty: ret,
+    };
+}
+
+fn lower_short(g: IR, n: Node) -> Value {
+    let left: Value = lower_expr(g, n.a, "bool");
+    expect(g, left.ty, "bool", n.tok);
+    let from: i64 = g.current[0];
+    let rhs: i64 = new_block(g);
+    let done: i64 = new_block(g);
+    var shortvalue: i64 = 0;
+    if n.text == "||" {
+        shortvalue = 1;
+    }
+    let init: i64 = constant(g, "bool", shortvalue);
+    if n.text == "&&" {
+        terminate(g, "branch", [left.id], [rhs, done]);
+    } else {
+        terminate(g, "branch", [left.id], [done, rhs]);
+    }
+    seal(g, rhs);
+    g.current[0] = rhs;
+    let right: Value = lower_expr(g, n.b, "bool");
+    expect(g, right.ty, "bool", n.tok);
+    let last: i64 = g.current[0];
+    terminate(g, "jump", [], [done]);
+    seal(g, done);
+    g.current[0] = done;
+    let phi: i64 = emit(g, "phi", "bool", - 1, - 1, [init, right.id], "");
+    g.ins[phi].labels = [from, last];
+    return Value {
+        id: phi, ty: "bool",
+    };
+}
+
+fn lower_expr_impl(g: IR, id: i64, hint: str) -> Value {
+    let n: Node = g.s.nodes[id];
+    let tok: i64 = n.tok;
+    if n.tag == "int" {
+        var ty: str = "i64";
+        if hint == "u8" {
+            ty = "u8";
+        }
+        let val: i64 = parse_int(n.text);
+        if ty == "u8" &&(val < 0 || val > 255) {
+            error(g.s, tok, "u8 literal out of range");
+        }
+        return Value {
+            id: constant(g, ty, val), ty: ty,
+        };
+    }
+    if n.tag == "bool" {
+        var value: i64 = 0;
+        if n.text == "true" {
+            value = 1;
+        }
+        return Value {
+            id: constant(g, "bool", value), ty: "bool",
+        };
+    }
+    if n.tag == "string" {
+        return Value {
+            id: emit(g, "string", "str", - 1, - 1, [], n.text), ty: "str",
+        };
+    }
+    if n.tag == "name" {
+        let varid: i64 = lookup(g, n.text);
+        if varid >= 0 {
+            return Value {
+                id: read_var(g, g.current[0], varid), ty: g.vars[varid].ty,
+            };
+        }
+        let fid: i64 = function_id(g.s, n.text, g.s.tokens[tok].file);
+        if fid >= 0 && g.s.nodes[g.s.functions[fid].body].tag == "enumvalue" {
+            return Value {
+                id: constant(g, g.s.functions[fid].ret, parse_int(g.s.nodes[g.s.functions[fid].body].text)), ty: g.s.functions[fid].ret,
+            };
+        }
+        error(g.s, tok, "undefined variable " + n.text);
+    }
+    if n.tag == "call" {
+        return lower_call(g, n);
+    }
+    if n.tag == "array" {
+        var ty: str = hint;
+        var values: []i64 = [];
+        var i: i64 = 0;
+        if ! starts(ty, "[]") {
+            if len(n.kids) == 0 {
+                error(g.s, tok, "empty array needs a type annotation");
+            }
+            let first: Value = lower_expr(g, n.kids[0], "");
+            ty = "[]" + first.ty;
+            push(values, first.id);
+            i = 1;
+        }
+        let arr: i64 = emit(g, "array", ty, - 1, - 1, [], element(ty));
+        while i < len(n.kids) {
+            let v: Value = lower_expr(g, n.kids[i], element(ty));
+            expect(g, v.ty, element(ty), tok);
+            push(values, v.id);
+            i = i + 1;
+        }
+        i = 0;
+        while i < len(values) {
+            emit(g, "push", "void", arr, values[i], [], element(ty));
+            i = i + 1;
+        }
+        return Value {
+            id: arr, ty: ty,
+        };
+    }
+    if n.tag == "record" {
+        let rid: i64 = record_id(g.s, n.text);
+        if rid < 0 || enum_type(g.s, n.text) {
+            error(g.s, tok, "unknown record " + n.text);
+        }
+        let r: Record = g.s.records[rid];
+        if len(n.kids) != len(r.names) {
+            error(g.s, tok, "record literal must initialize every field");
+        }
+        var values: []i64 = [];
+        var i: i64 = 0;
+        while i < len(r.names) {
+            push(values, - 1);
+            i = i + 1;
+        }
+        i = 0;
+        while i < len(n.kids) {
+            let field: Node = g.s.nodes[n.kids[i]];
+            let fi: i64 = find(r.names, field.text);
+            if fi < 0 {
+                error(g.s, field.tok, "unknown field " + field.text);
+            }
+            if values[fi] >= 0 {
+                error(g.s, field.tok, "duplicate initializer");
+            }
+            let v: Value = lower_expr(g, field.a, r.types[fi]);
+            expect(g, v.ty, r.types[fi], field.tok);
+            values[fi] = v.id;
+            i = i + 1;
+        }
+        return Value {
+            id: emit(g, "record", n.text, - 1, - 1, values, ""), ty: n.text,
+        };
+    }
+    if n.tag == "index" {
+        let a: Value = lower_expr(g, n.a, "");
+        let i: Value = lower_expr(g, n.b, "i64");
+        expect(g, i.ty, "i64", tok);
+        if a.ty == "str" {
+            return Value {
+                id: emit(g, "byte", "u8", a.id, i.id, [], ""), ty: "u8",
+            };
+        }
+        if ! starts(a.ty, "[]") {
+            error(g.s, tok, "indexing requires array or string");
+        }
+        return Value {
+            id: emit(g, "get", element(a.ty), a.id, i.id, [], ""), ty: element(a.ty),
+        };
+    }
+    if n.tag == "field" {
+        let a: Value = lower_expr(g, n.a, "");
+        let fi: i64 = field_id(g, a.ty, n.text, tok);
+        let ty: str = g.s.records[record_id(g.s, a.ty)].types[fi];
+        return Value {
+            id: emit(g, "extract", ty, a.id, - 1, [], itoa(fi)), ty: ty,
+        };
+    }
+    if n.tag == "cast" {
+        let a: Value = lower_expr(g, n.a, "");
+        if !(is_integer(a.ty) || a.ty == "bool" || enum_type(g.s, a.ty)) || !(is_integer(n.ty) || n.ty == "bool" || enum_type(g.s,
+        n.ty)) {
+            error(g.s, tok, "invalid scalar cast");
+        }
+        return Value {
+            id: emit(g, "cast", n.ty, a.id, - 1, [], ""), ty: n.ty,
+        };
+    }
+    if n.tag == "unary" {
+        let a: Value = lower_expr(g, n.a, hint);
+        if n.text == "!" {
+            expect(g, a.ty, "bool", tok);
+            return Value {
+                id: emit(g, "not", "bool", a.id, - 1, [], ""), ty: "bool",
+            };
+        }
+        if ! is_integer(a.ty) {
+            error(g.s, tok, "integer operand required");
+        }
+        var op: str = "neg";
+        if n.text == "~" {
+            op = "inv";
+        }
+        return Value {
+            id: emit(g, op, a.ty, a.id, - 1, [], ""), ty: a.ty,
+        };
+    }
+    if n.tag == "binary" {
+        if n.text == "&&" || n.text == "||" {
+            return lower_short(g, n);
+        }
+        let a: Value = lower_expr(g, n.a, "");
+        let b: Value = lower_expr(g, n.b, a.ty);
+        expect(g, b.ty, a.ty, tok);
+        if n.text == "+" && a.ty == "str" {
+            return Value {
+                id: emit(g, "concat", "str", a.id, b.id, [], ""), ty: "str",
+            };
+        }
+        let opi: i64 = find(["+", "-", "*", "/", "%", "<<", ">>", "&", "|", "^", "==", "!=", "<", "<=", ">",
+        ">="], n.text);
+        let ops: []str = ["add", "sub", "mul", "div", "rem", "shl", "shr", "and", "or", "xor", "eq", "ne",
+        "lt", "le", "gt", "ge"];
+        if opi < 0 {
+            error(g.s, tok, "unknown binary operator");
+        }
+        var ty: str = a.ty;
+        if opi >= 10 {
+            ty = "bool";
+        }
+        if opi < 10 && ! is_integer(a.ty) {
+            error(g.s, tok, "integer operands required");
+        }
+        if opi >= 12 && ! is_integer(a.ty) {
+            error(g.s, tok, "ordered comparison requires integers");
+        }
+        if opi >= 10 && opi < 12 && !(is_integer(a.ty) || a.ty == "str" || a.ty == "bool" || enum_type(g.s,
+        a.ty)) {
+            error(g.s, tok, "equality requires scalar operands");
+        }
+        return Value {
+            id: emit(g, ops[opi], ty, a.id, b.id, [], ""), ty: ty,
+        };
+    }
+    error(g.s, tok, "invalid expression " + n.tag);
+    return Value {
+        id: - 1, ty: "void",
+    };
+}
+
+fn lower_expr(g: IR, id: i64, hint: str) -> Value {
+    let v: Value = lower_expr_impl(g, id, hint);
+    g.s.nodes[id].ty = v.ty;
+    return v;
+}
+// A lens records evaluated lvalue components. Rebuilding records backwards
+// gives value semantics without evaluating a side-effecting index twice.
+fn lvalue(g: IR, id: i64, path: []Lens) -> Value {
+    let n: Node = g.s.nodes[id];
+    if n.tag == "name" {
+        let v: i64 = lookup(g, n.text);
+        if v < 0 {
+            error(g.s, n.tok, "undefined variable " + n.text);
+        }
+        push(path, Lens {
+            kind: "var", ty: g.vars[v].ty, base: v, index: - 1, field: - 1,
+        });
+        return Value {
+            id: read_var(g, g.current[0], v), ty: g.vars[v].ty,
+        };
+    }
+    if n.tag == "index" {
+        let a: Value = lower_expr(g, n.a, "");
+        if ! starts(a.ty, "[]") {
+            error(g.s, n.tok, "assignment index requires mutable array");
+        }
+        let index: Value = lower_expr(g, n.b, "i64");
+        expect(g, index.ty, "i64", n.tok);
+        while len(path) > 0 {
+            pop(path);
+        }
+        let ty: str = element(a.ty);
+        push(path, Lens {
+            kind: "index", ty: ty, base: a.id, index: index.id, field: - 1,
+        });
+        return Value {
+            id: emit(g, "get", ty, a.id, index.id, [], ""), ty: ty,
+        };
+    }
+    if n.tag == "field" {
+        let a: Value = lvalue(g, n.a, path);
+        let f: i64 = field_id(g, a.ty, n.text, n.tok);
+        let ty: str = g.s.records[record_id(g.s, a.ty)].types[f];
+        push(path, Lens {
+            kind: "field", ty: ty, base: a.id, index: - 1, field: f,
+        });
+        return Value {
+            id: emit(g, "extract", ty, a.id, - 1, [], itoa(f)), ty: ty,
+        };
+    }
+    error(g.s, n.tok, "invalid assignment target");
+    return Value {
+        id: - 1, ty: "void",
+    };
+}
+
+fn lower_statement(g: IR, id: i64) -> void {
+    let n: Node = g.s.nodes[id];
+    let tok: i64 = n.tok;
+    if n.tag == "block" {
+        let saved: i64 = len(g.active);
+        g.depth[0] = g.depth[0] + 1;
+        var i: i64 = 0;
+        var unreachable: bool = false;
+        while i < len(n.kids) {
+            if g.current[0] < 0 {
+                unreachable = true;
+                let ghost: i64 = new_block(g);
+                g.blocks[ghost].alive = false;
+                g.current[0] = ghost;
+            }
+            lower_statement(g, n.kids[i]);
+            i = i + 1;
+        }
+        while len(g.active) > saved {
+            pop(g.active);
+        }
+        g.depth[0] = g.depth[0] - 1;
+        if unreachable {
+            g.current[0] = - 1;
+        }
+        return;
+    }
+    if n.tag == "decl" {
+        let v: Value = lower_expr(g, n.a, n.ty);
+        if n.ty != "" {
+            if ! known_type(g.s, n.ty) {
+                error(g.s, tok, "unknown type " + n.ty);
+            }
+            expect(g, v.ty, n.ty, tok);
+        }
+        if v.ty == "void" {
+            error(g.s, tok, "cannot bind void");
+        }
+        g.s.nodes[id].ty = v.ty;
+        let varid: i64 = declare(g, n.text, v.ty, n.b == 1, tok);
+        write_var(g, g.current[0], varid, v.id);
+        return;
+    }
+    if n.tag == "expr" {
+        lower_expr(g, n.a, "");
+        return;
+    }
+    if n.tag == "assign" {
+        var path: []Lens = [];
+        let target: Value = lvalue(g, n.a, path);
+        let rhs: Value = lower_expr(g, n.b, target.ty);
+        expect(g, rhs.ty, target.ty, tok);
+        var value: i64 = rhs.id;
+        var i: i64 = len(path) - 1;
+        while i >= 0 {
+            let lens: Lens = path[i];
+            if lens.kind == "var" {
+                if ! g.vars[lens.base].writable {
+                    error(g.s, tok, "cannot assign to let binding");
+                }
+                write_var(g, g.current[0], lens.base, value);
+            } else {
+                if lens.kind == "index" {
+                    emit(g, "set", "void", lens.base, lens.index, [value], lens.ty);
+                    return;
+                } else {
+                    value = emit(g, "insert", g.ins[canonical(g, lens.base)].ty, lens.base, value, [], itoa(lens.field));
+                }
+            }
+            i = i - 1;
+        }
+        return;
+    }
+    if n.tag == "return" {
+        let ret: str = g.s.functions[g.fid].ret;
+        var values: []i64 = [];
+        if n.a >= 0 {
+            let v: Value = lower_expr(g, n.a, ret);
+            expect(g, v.ty, ret, tok);
+            if ret == "void" {
+                error(g.s, tok, "void function cannot return a value");
+            }
+            push(values, v.id);
+        } else {
+            expect(g, "void", ret, tok);
+        }
+        terminate(g, "return", values, []);
+        g.current[0] = - 1;
+        return;
+    }
+    if n.tag == "break" || n.tag == "continue" {
+        if len(g.breaks) == 0 {
+            error(g.s, tok, n.tag + " outside a loop");
+        }
+        var target: i64 = g.breaks[len(g.breaks) - 1];
+        if n.tag == "continue" {
+            target = g.continues[len(g.continues) - 1];
+        }
+        terminate(g, "jump", [], [target]);
+        g.current[0] = - 1;
+        return;
+    }
+    if n.tag == "if" {
+        let cond: Value = lower_expr(g, n.a, "bool");
+        expect(g, cond.ty, "bool", tok);
+        let yes: i64 = new_block(g);
+        let no: i64 = new_block(g);
+        let done: i64 = new_block(g);
+        terminate(g, "branch", [cond.id], [yes, no]);
+        seal(g, yes);
+        seal(g, no);
+        g.current[0] = yes;
+        lower_statement(g, n.b);
+        if g.current[0] >= 0 {
+            terminate(g, "jump", [], [done]);
+        }
+        g.current[0] = no;
+        if n.c >= 0 {
+            lower_statement(g, n.c);
+        }
+        if g.current[0] >= 0 {
+            terminate(g, "jump", [], [done]);
+        }
+        seal(g, done);
+        if len(g.blocks[done].preds) == 0 {
+            g.blocks[done].alive = false;
+            g.current[0] = - 1;
+        } else {
+            g.current[0] = done;
+        }
+        return;
+    }
+    if n.tag == "while" {
+        let header: i64 = new_block(g);
+        let body: i64 = new_block(g);
+        let done: i64 = new_block(g);
+        terminate(g, "jump", [], [header]);
+        g.current[0] = header;
+        let cond: Value = lower_expr(g, n.a, "bool");
+        expect(g, cond.ty, "bool", tok);
+        terminate(g, "branch", [cond.id], [body, done]);
+        seal(g, body);
+        push(g.breaks, done);
+        push(g.continues, header);
+        g.current[0] = body;
+        lower_statement(g, n.b);
+        if g.current[0] >= 0 {
+            terminate(g, "jump", [], [header]);
+        }
+        pop(g.breaks);
+        pop(g.continues);
+        seal(g, header);
+        seal(g, done);
+        g.current[0] = done;
+        return;
+    }
+    error(g.s, tok, "unknown statement " + n.tag);
+}
+
+fn check_layout(s: State, ty: str, stack: []str, tok: i64) -> void {
+    if ! known_type(s, ty) {
+        error(s, tok, "unknown type " + ty);
+    }
+    if starts(ty, "[]") || record_id(s, ty) < 0 || enum_type(s, ty) {
+        return;
+    }
+    if find(stack, ty) >= 0 {
+        error(s, tok, "infinitely recursive value record " + ty);
+    }
+    push(stack, ty);
+    let r: Record = s.records[record_id(s, ty)];
+    var i: i64 = 0;
+    while i < len(r.types) {
+        if r.types[i] == "void" {
+            error(s, tok, "void record field");
+        }
+        check_layout(s, r.types[i], stack, tok);
+        i = i + 1;
+    }
+    pop(stack);
+}
+
+fn lower_function(s: State, fid: i64) -> IR {
+    let f: Function = s.functions[fid];
+    let g: IR = new_ir(s, fid);
+    new_block(g);
+    seal(g, 0);
+    var i: i64 = 0;
+    check_layout(s, f.ret, [], f.tok);
+    while i < len(f.names) {
+        check_layout(s, f.types[i], [], f.tok);
+        if f.types[i] == "void" {
+            error(s, f.tok, "void parameter");
+        }
+        let v: i64 = declare(g, f.names[i], f.types[i], false, f.tok);
+        write_var(g, 0, v, emit(g, "arg", f.types[i], - 1, - 1, [], itoa(i)));
+        i = i + 1;
+    }
+    lower_statement(g, f.body);
+    if g.current[0] >= 0 {
+        if f.ret != "void" {
+            error(s, f.tok, "missing return in function " + f.name);
+        }
+        terminate(g, "return", [], []);
+    }
+    // Completing one phi can make another trivial. Iterate to its fixed point.
+    var change: bool = true;
+    while change {
+        change = false;
+        i = 0;
+        while i < len(g.ins) {
+            if g.ins[i].op == "phi" && g.ins[i].repl < 0 {
+                if trivial_phi(g, i) != i {
+                    change = true;
+                }
+            }
+            i = i + 1;
+        }
+    }
+    // Type-check unreachable syntax in detached blocks, then retain only CFG
+    // nodes reachable from entry. O0 does not merge or optimize live blocks.
+    var reached: []i64 = [];
+    i = 0;
+    while i < len(g.blocks) {
+        push(reached, 0);
+        i = i + 1;
+    }
+    var work: []i64 = [0];
+    while len(work) > 0 {
+        let b: i64 = work[len(work) - 1];
+        pop(work);
+        if reached[b] == 0 {
+            reached[b] = 1;
+            i = 0;
+            while i < len(g.blocks[b].targets) {
+                push(work, g.blocks[b].targets[i]);
+                i = i + 1;
+            }
+        }
+    }
+    i = 0;
+    while i < len(g.blocks) {
+        g.blocks[i].alive = reached[i] == 1;
+        i = i + 1;
+    }
+    return g;
+}

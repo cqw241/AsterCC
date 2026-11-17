@@ -1,0 +1,1891 @@
+{
+  "compiler": "build/bootstrap/O2/stage3",
+  "warmups": 1,
+  "measurements": 5,
+  "rows": [
+    {
+      "benchmark": "constants",
+      "configuration": "A0-L0",
+      "input": [
+        "3000000"
+      ],
+      "instructions": 18,
+      "blocks": 11,
+      "compile_ms": 69.868511,
+      "runtime_ms": 6.995468,
+      "samples_ms": [
+        6.995468,
+        7.873513,
+        9.322244,
+        6.96156,
+        6.880198
+      ],
+      "binary_bytes": 22936,
+      "stdout": "13500016500000\n",
+      "output_sha256": "c8f7d8671c263f215b928b8df3eac6665f13eb39868760f2a05eee34f2b635fa",
+      "pass_stats": []
+    },
+    {
+      "benchmark": "constants",
+      "configuration": "A2-L0",
+      "input": [
+        "3000000"
+      ],
+      "instructions": 12,
+      "blocks": 5,
+      "compile_ms": 85.451731,
+      "runtime_ms": 6.546484,
+      "samples_ms": [
+        6.299304,
+        6.546484,
+        7.052781,
+        6.378165,
+        6.587058
+      ],
+      "binary_bytes": 22936,
+      "stdout": "13500016500000\n",
+      "output_sha256": "c8f7d8671c263f215b928b8df3eac6665f13eb39868760f2a05eee34f2b635fa",
+      "pass_stats": [
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 2,
+          "before": 13,
+          "after": 11,
+          "ns": 26539
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 7,
+          "before": 11,
+          "after": 7,
+          "ns": 70985
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 15,
+          "before": 7,
+          "after": 7,
+          "ns": 22980
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 21,
+          "before": 7,
+          "after": 7,
+          "ns": 22679
+        },
+        {
+          "function": "kernel",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 36267
+        },
+        {
+          "function": "kernel",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 23165
+        },
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 13144
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 60402
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 8788
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 17636
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 9108
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 17872
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 3155
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 7411
+        },
+        {
+          "function": "main",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 11364
+        },
+        {
+          "function": "main",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 686
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 9088
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 14718
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 621
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 9463
+        }
+      ]
+    },
+    {
+      "benchmark": "constants",
+      "configuration": "A2-L2",
+      "input": [
+        "3000000"
+      ],
+      "instructions": 12,
+      "blocks": 5,
+      "compile_ms": 70.20701,
+      "runtime_ms": 2.477843,
+      "samples_ms": [
+        2.453842,
+        2.386715,
+        2.482131,
+        2.737075,
+        2.477843
+      ],
+      "binary_bytes": 22936,
+      "stdout": "13500016500000\n",
+      "output_sha256": "c8f7d8671c263f215b928b8df3eac6665f13eb39868760f2a05eee34f2b635fa",
+      "pass_stats": [
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 2,
+          "before": 13,
+          "after": 11,
+          "ns": 28793
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 7,
+          "before": 11,
+          "after": 7,
+          "ns": 73554
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 15,
+          "before": 7,
+          "after": 7,
+          "ns": 24146
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 21,
+          "before": 7,
+          "after": 7,
+          "ns": 25406
+        },
+        {
+          "function": "kernel",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 33406
+        },
+        {
+          "function": "kernel",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 18681
+        },
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 11752
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 187927
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 5623
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 14661
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 7435
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 15194
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 2633
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 6966
+        },
+        {
+          "function": "main",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 9945
+        },
+        {
+          "function": "main",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 961
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 5297
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 12879
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 555
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 5,
+          "after": 5,
+          "ns": 7842
+        }
+      ]
+    },
+    {
+      "benchmark": "gvn",
+      "configuration": "A0-L0",
+      "input": [
+        "3000000",
+        "7"
+      ],
+      "instructions": 20,
+      "blocks": 5,
+      "compile_ms": 83.451507,
+      "runtime_ms": 6.966578,
+      "samples_ms": [
+        9.761101,
+        6.635122,
+        7.847583,
+        6.317032,
+        6.966578
+      ],
+      "binary_bytes": 22936,
+      "stdout": "94500121500000\n",
+      "output_sha256": "f98bab86b021a1e1064d7f441d27acd89a55d92c453350cb74fd7f503e84dbb8",
+      "pass_stats": []
+    },
+    {
+      "benchmark": "gvn",
+      "configuration": "A2-L0",
+      "input": [
+        "3000000",
+        "7"
+      ],
+      "instructions": 16,
+      "blocks": 5,
+      "compile_ms": 77.485411,
+      "runtime_ms": 7.426461,
+      "samples_ms": [
+        6.951388,
+        7.426461,
+        7.471422,
+        7.326185,
+        13.438344
+      ],
+      "binary_bytes": 22936,
+      "stdout": "94500121500000\n",
+      "output_sha256": "f98bab86b021a1e1064d7f441d27acd89a55d92c453350cb74fd7f503e84dbb8",
+      "pass_stats": [
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 13,
+          "after": 13,
+          "ns": 14170
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 13,
+          "after": 13,
+          "ns": 42114
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 13,
+          "after": 13,
+          "ns": 2230
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 2,
+          "before": 13,
+          "after": 13,
+          "ns": 17180
+        },
+        {
+          "function": "kernel",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 6,
+          "before": 13,
+          "after": 9,
+          "ns": 29139
+        },
+        {
+          "function": "kernel",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 11461
+        },
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 8918
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 31961
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 3167
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 6,
+          "before": 9,
+          "after": 9,
+          "ns": 12991
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 7128
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 15592
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 650
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 9805
+        },
+        {
+          "function": "main",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 9869
+        },
+        {
+          "function": "main",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 493
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 7494
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 14980
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 493
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 8070
+        }
+      ]
+    },
+    {
+      "benchmark": "gvn",
+      "configuration": "A2-L2",
+      "input": [
+        "3000000",
+        "7"
+      ],
+      "instructions": 16,
+      "blocks": 5,
+      "compile_ms": 76.824178,
+      "runtime_ms": 2.480956,
+      "samples_ms": [
+        2.480956,
+        2.385742,
+        2.528806,
+        2.306018,
+        2.593142
+      ],
+      "binary_bytes": 22936,
+      "stdout": "94500121500000\n",
+      "output_sha256": "f98bab86b021a1e1064d7f441d27acd89a55d92c453350cb74fd7f503e84dbb8",
+      "pass_stats": [
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 13,
+          "after": 13,
+          "ns": 26176
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 13,
+          "after": 13,
+          "ns": 75289
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 13,
+          "after": 13,
+          "ns": 3721
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 2,
+          "before": 13,
+          "after": 13,
+          "ns": 25987
+        },
+        {
+          "function": "kernel",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 6,
+          "before": 13,
+          "after": 9,
+          "ns": 49465
+        },
+        {
+          "function": "kernel",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 19621
+        },
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 15243
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 57436
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 5041
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 6,
+          "before": 9,
+          "after": 9,
+          "ns": 24533
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 11783
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 30249
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 958
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 19815
+        },
+        {
+          "function": "main",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 12735
+        },
+        {
+          "function": "main",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 792
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 11099
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 27079
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 818
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 7,
+          "after": 7,
+          "ns": 15434
+        }
+      ]
+    },
+    {
+      "benchmark": "licm",
+      "configuration": "A0-L0",
+      "input": [
+        "3000000",
+        "7",
+        "9"
+      ],
+      "instructions": 20,
+      "blocks": 5,
+      "compile_ms": 65.200329,
+      "runtime_ms": 7.669935,
+      "samples_ms": [
+        7.930268,
+        7.39676,
+        9.049942,
+        7.669935,
+        6.736278
+      ],
+      "binary_bytes": 22936,
+      "stdout": "4499998991520\n",
+      "output_sha256": "91974f69ec1370a399b75ce481e7f43e63e12b32da0293bd60cca9147c9b6a0f",
+      "pass_stats": []
+    },
+    {
+      "benchmark": "licm",
+      "configuration": "A2-L0",
+      "input": [
+        "3000000",
+        "7",
+        "9"
+      ],
+      "instructions": 20,
+      "blocks": 5,
+      "compile_ms": 86.628391,
+      "runtime_ms": 6.38898,
+      "samples_ms": [
+        7.077456,
+        6.38898,
+        6.287717,
+        6.226643,
+        6.562756
+      ],
+      "binary_bytes": 22936,
+      "stdout": "4499998991520\n",
+      "output_sha256": "91974f69ec1370a399b75ce481e7f43e63e12b32da0293bd60cca9147c9b6a0f",
+      "pass_stats": [
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 20404
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 67956
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 7949
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 3,
+          "before": 11,
+          "after": 11,
+          "ns": 23373
+        },
+        {
+          "function": "kernel",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 45742
+        },
+        {
+          "function": "kernel",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 5,
+          "before": 11,
+          "after": 11,
+          "ns": 30848
+        },
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 16800
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 83221
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 3068
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 23289
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 14756
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 26064
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 964
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 14400
+        },
+        {
+          "function": "main",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 17071
+        },
+        {
+          "function": "main",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 719
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 12036
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 24900
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 827
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 13296
+        }
+      ]
+    },
+    {
+      "benchmark": "licm",
+      "configuration": "A2-L2",
+      "input": [
+        "3000000",
+        "7",
+        "9"
+      ],
+      "instructions": 20,
+      "blocks": 5,
+      "compile_ms": 78.009018,
+      "runtime_ms": 2.785338,
+      "samples_ms": [
+        2.186006,
+        2.817959,
+        2.523807,
+        2.785338,
+        3.196533
+      ],
+      "binary_bytes": 22936,
+      "stdout": "4499998991520\n",
+      "output_sha256": "91974f69ec1370a399b75ce481e7f43e63e12b32da0293bd60cca9147c9b6a0f",
+      "pass_stats": [
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 18603
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 60707
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 4751
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 3,
+          "before": 11,
+          "after": 11,
+          "ns": 22416
+        },
+        {
+          "function": "kernel",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 39129
+        },
+        {
+          "function": "kernel",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 5,
+          "before": 11,
+          "after": 11,
+          "ns": 26730
+        },
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 15831
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 75927
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 2849
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 11,
+          "after": 11,
+          "ns": 20777
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 13304
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 30455
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 1843
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 12874
+        },
+        {
+          "function": "main",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 15056
+        },
+        {
+          "function": "main",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 813
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 11316
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 23313
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 693
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 9,
+          "after": 9,
+          "ns": 11525
+        }
+      ]
+    },
+    {
+      "benchmark": "arrays",
+      "configuration": "A0-L0",
+      "input": [
+        "3000000",
+        "7"
+      ],
+      "instructions": 22,
+      "blocks": 8,
+      "compile_ms": 88.997055,
+      "runtime_ms": 10.710206,
+      "samples_ms": [
+        10.502703,
+        12.304965,
+        10.24707,
+        12.339344,
+        10.710206
+      ],
+      "binary_bytes": 22936,
+      "stdout": "19889680512\n",
+      "output_sha256": "a4a26163ca5f258cacb54d5e371c50d776d7d46fcb3d6aa55de549a9684d5247",
+      "pass_stats": []
+    },
+    {
+      "benchmark": "arrays",
+      "configuration": "A2-L0",
+      "input": [
+        "3000000",
+        "7"
+      ],
+      "instructions": 22,
+      "blocks": 8,
+      "compile_ms": 82.814479,
+      "runtime_ms": 9.176921,
+      "samples_ms": [
+        10.960039,
+        9.516324,
+        6.836271,
+        9.176921,
+        8.733032
+      ],
+      "binary_bytes": 22936,
+      "stdout": "19889680512\n",
+      "output_sha256": "a4a26163ca5f258cacb54d5e371c50d776d7d46fcb3d6aa55de549a9684d5247",
+      "pass_stats": [
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 20548
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 69812
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 5865
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 3,
+          "before": 10,
+          "after": 10,
+          "ns": 20069
+        },
+        {
+          "function": "kernel",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 37797
+        },
+        {
+          "function": "kernel",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 2,
+          "before": 10,
+          "after": 10,
+          "ns": 30321
+        },
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 17577
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 81550
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 2636
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 19410
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 17928
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 62103
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 2325
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 2,
+          "before": 12,
+          "after": 12,
+          "ns": 19308
+        },
+        {
+          "function": "main",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 25715
+        },
+        {
+          "function": "main",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 11202
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 16977
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 44007
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 2257
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 24287
+        }
+      ]
+    },
+    {
+      "benchmark": "arrays",
+      "configuration": "A2-L2",
+      "input": [
+        "3000000",
+        "7"
+      ],
+      "instructions": 22,
+      "blocks": 8,
+      "compile_ms": 96.814886,
+      "runtime_ms": 7.158755,
+      "samples_ms": [
+        5.933683,
+        5.876672,
+        7.907579,
+        7.583023,
+        7.158755
+      ],
+      "binary_bytes": 22936,
+      "stdout": "19889680512\n",
+      "output_sha256": "a4a26163ca5f258cacb54d5e371c50d776d7d46fcb3d6aa55de549a9684d5247",
+      "pass_stats": [
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 22223
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 84737
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 5847
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 3,
+          "before": 10,
+          "after": 10,
+          "ns": 17703
+        },
+        {
+          "function": "kernel",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 31955
+        },
+        {
+          "function": "kernel",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 2,
+          "before": 10,
+          "after": 10,
+          "ns": 25793
+        },
+        {
+          "function": "kernel",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 15780
+        },
+        {
+          "function": "kernel",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 68512
+        },
+        {
+          "function": "kernel",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 3027
+        },
+        {
+          "function": "kernel",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 10,
+          "after": 10,
+          "ns": 16277
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 15884
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 42426
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 2002
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 2,
+          "before": 12,
+          "after": 12,
+          "ns": 17448
+        },
+        {
+          "function": "main",
+          "pass": "gvn",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 22781
+        },
+        {
+          "function": "main",
+          "pass": "licm",
+          "requires": "dominators",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 10365
+        },
+        {
+          "function": "main",
+          "pass": "simplify",
+          "requires": "none",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 18420
+        },
+        {
+          "function": "main",
+          "pass": "sccp",
+          "requires": "use-def",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 42602
+        },
+        {
+          "function": "main",
+          "pass": "cfg",
+          "requires": "none",
+          "invalidates": "cfg,dominators,loops,use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 1967
+        },
+        {
+          "function": "main",
+          "pass": "dce",
+          "requires": "use-def",
+          "invalidates": "use-def",
+          "changed_instructions": 0,
+          "before": 12,
+          "after": 12,
+          "ns": 19182
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "status": "pass",
+  "seed_checked_own_source": true,
+  "runtime_case": "data",
+  "commands": [
+    {
+      "command": [
+        "cmake",
+        "-S",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三",
+        "-B",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DASTER_SANITIZE=ON"
+      ],
+      "stdout": "-- Configuring done (0.1s)\n-- Generating done (0.0s)\n-- Build files have been written to: /mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "command": [
+        "cmake",
+        "--build",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize",
+        "-j",
+        "2"
+      ],
+      "stdout": "[ 50%] Built target asterrt\n[ 75%] Building CXX object CMakeFiles/astercc0.dir/stage0/compiler.cpp.o\n[100%] Linking CXX executable astercc0\n[100%] Built target astercc0\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "command": [
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize/astercc0",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/compiler/main.aster",
+        "-O2",
+        "--verify-ir",
+        "--check"
+      ],
+      "stdout": "",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "command": [
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/astercc0",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/tests/cases/data.aster",
+        "-O2",
+        "--emit=llvm",
+        "-o",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize/data.ll"
+      ],
+      "stdout": "",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "command": [
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/.toolchain/usr/lib/llvm-18/bin/clang",
+        "-c",
+        "-x",
+        "ir",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize/data.ll",
+        "-o",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize/data.o"
+      ],
+      "stdout": "",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-g",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/runtime/runtime.c",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize/data.o",
+        "-o",
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize/data"
+      ],
+      "stdout": "",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "command": [
+        "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/build/sanitize/data"
+      ],
+      "stdout": "1\n9\n2\n8\n2\n12\n1\n99\n1\n7\nHello Aster\n42\n158\n-1\n3\n90\n1\n你好🌟\n10\n",
+      "stderr": "",
+      "returncode": 0
+    }
+  ]
+}

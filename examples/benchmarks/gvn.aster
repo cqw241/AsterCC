@@ -1,0 +1,18 @@
+fn kernel(n: i64, a: i64) -> i64 {
+    var i: i64 = 0;
+    var sum: i64 = 0;
+    while i < n {
+        let x: i64 = i * a + 17;
+        let y: i64 = i * a + 17;
+        let z: i64 = i * a + 17;
+        sum = sum + x + y + z;
+        i = i + 1;
+    }
+    return sum;
+}
+
+fn main() -> i64 {
+    let argv: []str = args();
+    println_int(kernel(parse_int(argv[1]), parse_int(argv[2])));
+    return 0;
+}

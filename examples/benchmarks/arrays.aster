@@ -1,0 +1,22 @@
+fn kernel(n: i64, xs: []i64, factor: i64) -> i64 {
+    var i: i64 = 0;
+    var sum: i64 = 0;
+    while i < n {
+        let index: i64 = i & 255;
+        sum = sum + xs[index] *(factor * factor + 3);
+        i = i + 1;
+    }
+    return sum;
+}
+
+fn main() -> i64 {
+    let argv: []str = args();
+    let xs: []i64 = [];
+    var i: i64 = 0;
+    while i < 256 {
+        push(xs, i);
+        i = i + 1;
+    }
+    println_int(kernel(parse_int(argv[1]), xs, parse_int(argv[2])));
+    return 0;
+}

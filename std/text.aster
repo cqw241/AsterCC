@@ -1,0 +1,17 @@
+struct StringBuilder {
+    parts: []str,
+}
+
+fn builder_new() -> StringBuilder {
+    return StringBuilder {
+        parts: [],
+    };
+}
+
+fn builder_append(builder: StringBuilder, text: str) -> void {
+    push(builder.parts, text);
+}
+
+fn builder_finish(builder: StringBuilder) -> str {
+    return join(builder.parts, "");
+}

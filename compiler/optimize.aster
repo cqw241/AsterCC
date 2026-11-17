@@ -1,0 +1,1015 @@
+// Effects are centralized. In particular div/rem/get/byte can trap, and a
+// call or store is never removed merely because its result is unused.
+fn pure(op: str) -> bool {
+    return find(["const", "string", "arg", "add", "sub", "mul", "shl", "shr", "and", "or", "xor", "neg",
+    "inv", "not", "eq", "ne", "lt", "le", "gt", "ge", "cast", "record", "extract", "insert"], op) >= 0;
+}
+
+fn operands(x: Inst) -> []i64 {
+    var xs: []i64 = [];
+    if x.a >= 0 {
+        push(xs, x.a);
+    }
+    if x.b >= 0 {
+        push(xs, x.b);
+    }
+    var i: i64 = 0;
+    while i < len(x.args) {
+        push(xs, x.args[i]);
+        i = i + 1;
+    }
+    return xs;
+}
+
+fn live_inst(g: IR, id: i64) -> bool {
+    let x: Inst = g.ins[id];
+    return ! x.dead && x.repl < 0 && g.blocks[x.block].alive;
+}
+
+fn count_ir(g: IR) -> i64 {
+    var n: i64 = 0;
+    var i: i64 = 0;
+    while i < len(g.ins) {
+        if live_inst(g, i) && g.ins[i].op != "arg" && g.ins[i].op != "const" && g.ins[i].op != "string" {
+            n = n + 1;
+        }
+        i = i + 1;
+    }
+    return n;
+}
+
+fn instruction_key(g: IR, id: i64) -> str {
+    let x: Inst = g.ins[id];
+    var parts: []str = [x.op, x.ty, x.text];
+    let xs: []i64 = operands(x);
+    var i: i64 = 0;
+    while i < len(xs) {
+        let v: i64 = canonical(g, xs[i]);
+        let operand: Inst = g.ins[v];
+        // Equal literal values have the same value number even when their
+        // syntax nodes are different. Hex escaping makes string keys injective.
+        if operand.op == "const" {
+            push(parts, "constant/" + operand.ty + "/" + operand.text);
+        } else {
+            if operand.op == "string" {
+                push(parts, "string/" + escaped_bytes(operand.text));
+            } else {
+                push(parts, "value/" + itoa(v));
+            }
+        }
+        i = i + 1;
+    }
+    return join(parts, ":");
+}
+
+fn dump_ir(g: IR) -> str {
+    var lines: []str = ["function " + g.s.functions[g.fid].module + "::" + g.s.functions[g.fid].name + "\n"];
+    var b: i64 = 0;
+    while b < len(g.blocks) {
+        if g.blocks[b].alive {
+            push(lines, "b" + itoa(b) + ":\n");
+            var i: i64 = 0;
+            while i < len(g.blocks[b].code) {
+                let id: i64 = g.blocks[b].code[i];
+                let x: Inst = g.ins[id];
+                if live_inst(g, id) && x.block == b {
+                    var args: []str = [];
+                    let xs: []i64 = operands(x);
+                    var j: i64 = 0;
+                    while j < len(xs) {
+                        var part: str = "%" + itoa(canonical(g, xs[j]));
+                        if x.op == "phi" {
+                            part = part + "@b" + itoa(x.labels[j]);
+                        }
+                        push(args, part);
+                        j = j + 1;
+                    }
+                    var text: str = x.text;
+                    if x.op == "string" {
+                        text = escaped_bytes(text);
+                    }
+                    push(lines, "  %" + itoa(id) + ":" + x.ty + " = " + x.op + " " + text + " " + join(args, ", ") + "\n");
+                }
+                i = i + 1;
+            }
+            var args: []str = [];
+            i = 0;
+            while i < len(g.blocks[b].values) {
+                push(args, "%" + itoa(canonical(g, g.blocks[b].values[i])));
+                i = i + 1;
+            }
+            i = 0;
+            while i < len(g.blocks[b].targets) {
+                push(args, "b" + itoa(g.blocks[b].targets[i]));
+                i = i + 1;
+            }
+            push(lines, "  " + g.blocks[b].term + " " + join(args, ", ") + "\n");
+        }
+        b = b + 1;
+    }
+    return join(lines, "");
+}
+
+fn foldable(g: IR, x: Inst) -> bool {
+    if !(pure(x.op) || x.op == "div" || x.op == "rem") || x.op == "record" || x.op == "extract" || x.op == "insert" || x.op == "arg" || x.op == "string" || x.op == "const" {
+        return false;
+    }
+    let xs: []i64 = operands(x);
+    var i: i64 = 0;
+    while i < len(xs) {
+        if g.ins[canonical(g, xs[i])].op != "const" {
+            return false;
+        }
+        i = i + 1;
+    }
+    if(x.op == "div" || x.op == "rem") && parse_int(g.ins[canonical(g, x.b)].text) == 0 {
+        return false;
+    }
+    return true;
+}
+
+fn eval_scalar(op: str, a: i64, b: i64, ty: str, source: str) -> i64 {
+    var n: i64 = 0;
+    if op == "add" {
+        n = a + b;
+    } else {
+        if op == "sub" {
+            n = a - b;
+        } else {
+            if op == "mul" {
+                n = a * b;
+            } else {
+                if op == "div" {
+                    n = a / b;
+                } else {
+                    if op == "rem" {
+                        n = a % b;
+                    } else {
+                        if op == "shl" {
+                            var mask: i64 = 63;
+                            if ty == "u8" {
+                                mask = 7;
+                            }
+                            n = a <<(b & mask);
+                        } else {
+                            if op == "shr" {
+                                var mask: i64 = 63;
+                                if ty == "u8" {
+                                    mask = 7;
+                                }
+                                n = a >>(b & mask);
+                            } else {
+                                if op == "and" {
+                                    n = a & b;
+                                } else {
+                                    if op == "or" {
+                                        n = a | b;
+                                    } else {
+                                        if op == "xor" {
+                                            n = a ^ b;
+                                        } else {
+                                            if op == "neg" {
+                                                n = 0 - a;
+                                            } else {
+                                                if op == "inv" {
+                                                    n = ~ a;
+                                                } else {
+                                                    if op == "not" {
+                                                        if a == 0 {
+                                                            n = 1;
+                                                        }
+                                                    } else {
+                                                        if op == "eq" {
+                                                            if a == b {
+                                                                n = 1;
+                                                            }
+                                                        } else {
+                                                            if op == "ne" {
+                                                                if a != b {
+                                                                    n = 1;
+                                                                }
+                                                            } else {
+                                                                if op == "lt" {
+                                                                    if a < b {
+                                                                        n = 1;
+                                                                    }
+                                                                } else {
+                                                                    if op == "le" {
+                                                                        if a <= b {
+                                                                            n = 1;
+                                                                        }
+                                                                    } else {
+                                                                        if op == "gt" {
+                                                                            if a > b {
+                                                                                n = 1;
+                                                                            }
+                                                                        } else {
+                                                                            if op == "ge" {
+                                                                                if a >= b {
+                                                                                    n = 1;
+                                                                                }
+                                                                            } else {
+                                                                                if op == "cast" {
+                                                                                    n = a;
+                                                                                    if ty == "bool" {
+                                                                                        n = 0;
+                                                                                        if a != 0 {
+                                                                                            n = 1;
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if ty == "u8" {
+        n = n & 255;
+    }
+    return n;
+}
+
+fn turn_constant(g: IR, id: i64, n: i64) -> void {
+    g.ins[id].op = "const";
+    g.ins[id].a = - 1;
+    g.ins[id].b = - 1;
+    g.ins[id].args = [];
+    g.ins[id].labels = [];
+    g.ins[id].text = itoa(n);
+}
+
+fn simplify(g: IR) -> void {
+    var i: i64 = 0;
+    while i < len(g.ins) {
+        if live_inst(g, i) {
+            let x: Inst = g.ins[i];
+            if x.op == "phi" {
+                trivial_phi(g, i);
+            } else {
+                if foldable(g, x) {
+                    var a: i64 = 0;
+                    var b: i64 = 0;
+                    if x.a >= 0 {
+                        a = parse_int(g.ins[canonical(g, x.a)].text);
+                    }
+                    if x.b >= 0 {
+                        b = parse_int(g.ins[canonical(g, x.b)].text);
+                    }
+                    turn_constant(g, i, eval_scalar(x.op, a, b, x.ty, ""));
+                } else {
+                    if x.op == "extract" {
+                        let a: i64 = canonical(g, x.a);
+                        let f: i64 = parse_int(x.text);
+                        if g.ins[a].op == "record" {
+                            g.ins[i].repl = g.ins[a].args[f];
+                        } else {
+                            if g.ins[a].op == "insert" && g.ins[a].text == x.text {
+                                g.ins[i].repl = g.ins[a].b;
+                            }
+                        }
+                    } else {
+                        if x.b >= 0 {
+                            let a: i64 = canonical(g, x.a);
+                            let b: i64 = canonical(g, x.b);
+                            let rhs: Inst = g.ins[b];
+                            if rhs.op == "const" {
+                                let n: i64 = parse_int(rhs.text);
+                                if(x.op == "add" || x.op == "sub" || x.op == "or" || x.op == "xor" || x.op == "shl" || x.op == "shr") && n == 0 || x.op == "mul" && n == 1 {
+                                    g.ins[i].repl = a;
+                                }
+                                if(x.op == "mul" || x.op == "and") && n == 0 {
+                                    turn_constant(g, i, 0);
+                                }
+                            }
+                            if a == b &&(x.op == "sub" || x.op == "xor") {
+                                turn_constant(g, i, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        i = i + 1;
+    }
+}
+
+fn rebuild_cfg(g: IR) -> void {
+    var b: i64 = 0;
+    while b < len(g.blocks) {
+        g.blocks[b].preds = [];
+        b = b + 1;
+    }
+    b = 0;
+    while b < len(g.blocks) {
+        if g.blocks[b].alive {
+            var j: i64 = 0;
+            while j < len(g.blocks[b].targets) {
+                let t: i64 = g.blocks[b].targets[j];
+                if ! has(g.blocks[t].preds, b) {
+                    push(g.blocks[t].preds, b);
+                }
+                j = j + 1;
+            }
+        }
+        b = b + 1;
+    }
+    var i: i64 = 0;
+    while i < len(g.ins) {
+        if live_inst(g, i) && g.ins[i].op == "phi" {
+            var args: []i64 = [];
+            var labels: []i64 = [];
+            var j: i64 = 0;
+            while j < len(g.ins[i].args) {
+                let p: i64 = g.ins[i].labels[j];
+                if has(g.blocks[g.ins[i].block].preds, p) && ! has(labels, p) {
+                    push(args, g.ins[i].args[j]);
+                    push(labels, p);
+                }
+                j = j + 1;
+            }
+            g.ins[i].args = args;
+            g.ins[i].labels = labels;
+            trivial_phi(g, i);
+        }
+        i = i + 1;
+    }
+}
+
+fn cfg_simplify(g: IR) -> void {
+    var reachable: []i64 = [];
+    var b: i64 = 0;
+    while b < len(g.blocks) {
+        push(reachable, 0);
+        b = b + 1;
+    }
+    var work: []i64 = [0];
+    while len(work) > 0 {
+        let from: i64 = work[len(work) - 1];
+        pop(work);
+        if reachable[from] == 0 {
+            reachable[from] = 1;
+            var i: i64 = 0;
+            while i < len(g.blocks[from].targets) {
+                push(work, g.blocks[from].targets[i]);
+                i = i + 1;
+            }
+        }
+    }
+    b = 0;
+    while b < len(g.blocks) {
+        g.blocks[b].alive = reachable[b] == 1;
+        b = b + 1;
+    }
+    rebuild_cfg(g);
+    // Merge a single-predecessor successor into an unconditional predecessor.
+    var changed: bool = true;
+    while changed {
+        changed = false;
+        b = 0;
+        while b < len(g.blocks) {
+            if g.blocks[b].alive && g.blocks[b].term == "jump" {
+                let t: i64 = g.blocks[b].targets[0];
+                if t != 0 && t != b && len(g.blocks[t].preds) == 1 {
+                    var j: i64 = 0;
+                    while j < len(g.blocks[t].code) {
+                        let id: i64 = g.blocks[t].code[j];
+                        g.ins[id].block = b;
+                        push(g.blocks[b].code, id);
+                        j = j + 1;
+                    }
+                    g.blocks[b].term = g.blocks[t].term;
+                    g.blocks[b].values = g.blocks[t].values;
+                    g.blocks[b].targets = g.blocks[t].targets;
+                    g.blocks[t].alive = false;
+                    j = 0;
+                    while j < len(g.ins) {
+                        if g.ins[j].op == "phi" {
+                            var k: i64 = 0;
+                            while k < len(g.ins[j].labels) {
+                                if g.ins[j].labels[k] == t {
+                                    g.ins[j].labels[k] = b;
+                                }
+                                k = k + 1;
+                            }
+                        }
+                        j = j + 1;
+                    }
+                    changed = true;
+                    rebuild_cfg(g);
+                }
+            }
+            b = b + 1;
+        }
+    }
+}
+
+fn dce(g: IR) -> void {
+    var marked: []i64 = [];
+    var work: []i64 = [];
+    var i: i64 = 0;
+    while i < len(g.ins) {
+        push(marked, 0);
+        let x: Inst = g.ins[i];
+        if live_inst(g, i) && ! pure(x.op) && x.op != "phi" && x.op != "len" {
+            push(work, i);
+        }
+        i = i + 1;
+    }
+    var b: i64 = 0;
+    while b < len(g.blocks) {
+        if g.blocks[b].alive {
+            i = 0;
+            while i < len(g.blocks[b].values) {
+                push(work, g.blocks[b].values[i]);
+                i = i + 1;
+            }
+        }
+        b = b + 1;
+    }
+    while len(work) > 0 {
+        let id: i64 = canonical(g, work[len(work) - 1]);
+        pop(work);
+        if marked[id] == 0 {
+            marked[id] = 1;
+            let xs: []i64 = operands(g.ins[id]);
+            i = 0;
+            while i < len(xs) {
+                push(work, xs[i]);
+                i = i + 1;
+            }
+        }
+    }
+    i = 0;
+    while i < len(g.ins) {
+        if marked[i] == 0 {
+            g.ins[i].dead = true;
+        }
+        i = i + 1;
+    }
+}
+// Sparse conditional constant propagation: values and executable edges grow
+// monotonically. A changed value schedules only its users' blocks.
+fn sccp(g: IR) -> void {
+    let nb: i64 = len(g.blocks);
+    var lattice: []i64 = [];
+    var vals: []i64 = [];
+    var users: [][]i64 = [];
+    var i: i64 = 0;
+    while i < len(g.ins) {
+        push(lattice, 0);
+        push(vals, 0);
+        var empty: []i64 = [];
+        push(users, empty);
+        i = i + 1;
+    }
+    var b: i64 = 0;
+    while b < nb {
+        i = 0;
+        while i < len(g.blocks[b].code) {
+            let id: i64 = g.blocks[b].code[i];
+            if live_inst(g, id) {
+                let xs: []i64 = operands(g.ins[id]);
+                var j: i64 = 0;
+                while j < len(xs) {
+                    push(users[canonical(g, xs[j])], b);
+                    j = j + 1;
+                }
+            }
+            i = i + 1;
+        }
+        i = 0;
+        while i < len(g.blocks[b].values) {
+            push(users[canonical(g, g.blocks[b].values[i])], b);
+            i = i + 1;
+        }
+        b = b + 1;
+    }
+    var edges: []i64 = [];
+    var executable: []i64 = [];
+    var queued: []i64 = [];
+    i = 0;
+    while i < nb * nb {
+        push(edges, 0);
+        i = i + 1;
+    }
+    i = 0;
+    while i < nb {
+        push(executable, 0);
+        push(queued, 0);
+        i = i + 1;
+    }
+    var work: []i64 = [0];
+    queued[0] = 1;
+    executable[0] = 1;
+    var cursor: i64 = 0;
+    while cursor < len(work) {
+        b = work[cursor];
+        cursor = cursor + 1;
+        queued[b] = 0;
+        i = 0;
+        while i < len(g.blocks[b].code) {
+            let id: i64 = g.blocks[b].code[i];
+            if live_inst(g, id) {
+                let x: Inst = g.ins[id];
+                var state: i64 = 0;
+                var value: i64 = 0;
+                if x.op == "const" {
+                    state = 1;
+                    value = parse_int(x.text);
+                } else {
+                    if x.op == "phi" {
+                        var j: i64 = 0;
+                        while j < len(x.args) {
+                            if edges[x.labels[j] * nb + b] == 1 {
+                                let a: i64 = canonical(g, x.args[j]);
+                                if lattice[a] == 2 {
+                                    state = 2;
+                                } else {
+                                    if lattice[a] == 1 {
+                                        if state == 0 {
+                                            state = 1;
+                                            value = vals[a];
+                                        } else {
+                                            if state == 1 && value != vals[a] {
+                                                state = 2;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            j = j + 1;
+                        }
+                    } else {
+                        if(pure(x.op) || x.op == "div" || x.op == "rem") && x.op != "arg" && x.op != "string" && x.op != "record" && x.op != "extract" && x.op != "insert" {
+                            state = 1;
+                            let xs: []i64 = operands(x);
+                            var j: i64 = 0;
+                            var unknown: bool = false;
+                            while j < len(xs) {
+                                let a: i64 = canonical(g, xs[j]);
+                                if lattice[a] == 2 {
+                                    state = 2;
+                                }
+                                if lattice[a] == 0 {
+                                    unknown = true;
+                                }
+                                j = j + 1;
+                            }
+                            if state == 1 && unknown {
+                                state = 0;
+                            }
+                            if state == 1 {
+                                var a: i64 = 0;
+                                var bv: i64 = 0;
+                                if x.a >= 0 {
+                                    a = vals[canonical(g, x.a)];
+                                }
+                                if x.b >= 0 {
+                                    bv = vals[canonical(g, x.b)];
+                                }
+                                if(x.op == "div" || x.op == "rem") && bv == 0 {
+                                    state = 2;
+                                } else {
+                                    value = eval_scalar(x.op, a, bv, x.ty, "");
+                                }
+                            }
+                        } else {
+                            state = 2;
+                        }
+                    }
+                }
+                var changed: bool = false;
+                if state > lattice[id] {
+                    lattice[id] = state;
+                    vals[id] = value;
+                    changed = true;
+                } else {
+                    if state == 1 && lattice[id] == 1 && vals[id] != value {
+                        lattice[id] = 2;
+                        changed = true;
+                    }
+                }
+                if changed {
+                    var j: i64 = 0;
+                    while j < len(users[id]) {
+                        let target: i64 = users[id][j];
+                        if executable[target] == 1 && queued[target] == 0 {
+                            push(work, target);
+                            queued[target] = 1;
+                        }
+                        j = j + 1;
+                    }
+                }
+            }
+            i = i + 1;
+        }
+        var targets: []i64 = [];
+        let block: Block = g.blocks[b];
+        if block.term == "jump" {
+            targets = block.targets;
+        } else {
+            if block.term == "branch" {
+                let cond: i64 = canonical(g, block.values[0]);
+                if lattice[cond] == 1 {
+                    var branch: i64 = 1;
+                    if vals[cond] != 0 {
+                        branch = 0;
+                    }
+                    push(targets, block.targets[branch]);
+                } else {
+                    if lattice[cond] == 2 {
+                        targets = block.targets;
+                    }
+                }
+            }
+        }
+        i = 0;
+        while i < len(targets) {
+            let target: i64 = targets[i];
+            if edges[b * nb + target] == 0 {
+                edges[b * nb + target] = 1;
+                executable[target] = 1;
+                if queued[target] == 0 {
+                    push(work, target);
+                    queued[target] = 1;
+                }
+            }
+            i = i + 1;
+        }
+    }
+    i = 0;
+    while i < len(g.ins) {
+        if live_inst(g, i) && lattice[i] == 1 && g.ins[i].op != "const" {
+            turn_constant(g, i, vals[i]);
+        }
+        i = i + 1;
+    }
+    b = 0;
+    while b < nb {
+        g.blocks[b].alive = executable[b] == 1;
+        if g.blocks[b].alive && g.blocks[b].term == "branch" {
+            let cond: i64 = canonical(g, g.blocks[b].values[0]);
+            if lattice[cond] == 1 {
+                var branch: i64 = 1;
+                if vals[cond] != 0 {
+                    branch = 0;
+                }
+                g.blocks[b].targets = [g.blocks[b].targets[branch]];
+                g.blocks[b].values = [];
+                g.blocks[b].term = "jump";
+            }
+        }
+        b = b + 1;
+    }
+    rebuild_cfg(g);
+}
+
+fn dominators(g: IR) -> [][]i64 {
+    var dom: [][]i64 = [];
+    let n: i64 = len(g.blocks);
+    var b: i64 = 0;
+    while b < n {
+        var row: []i64 = [];
+        var j: i64 = 0;
+        while j < n {
+            var v: i64 = 0;
+            if b == j || b != 0 && g.blocks[b].alive && g.blocks[j].alive {
+                v = 1;
+            }
+            push(row, v);
+            j = j + 1;
+        }
+        push(dom, row);
+        b = b + 1;
+    }
+    var change: bool = true;
+    while change {
+        change = false;
+        b = 1;
+        while b < n {
+            if g.blocks[b].alive {
+                var j: i64 = 0;
+                while j < n {
+                    var v: i64 = 1;
+                    var p: i64 = 0;
+                    while p < len(g.blocks[b].preds) {
+                        if dom[g.blocks[b].preds[p]][j] == 0 {
+                            v = 0;
+                        }
+                        p = p + 1;
+                    }
+                    if j == b {
+                        v = 1;
+                    }
+                    if dom[b][j] != v {
+                        dom[b][j] = v;
+                        change = true;
+                    }
+                    j = j + 1;
+                }
+            }
+            b = b + 1;
+        }
+    }
+    return dom;
+}
+
+fn position(g: IR, id: i64) -> i64 {
+    let block: Block = g.blocks[g.ins[id].block];
+    var i: i64 = 0;
+    while i < len(block.code) {
+        if block.code[i] == id {
+            return i;
+        }
+        i = i + 1;
+    }
+    return - 1;
+}
+// Recover the immediate-dominator tree from the fixed-point dominance sets.
+// Strict dominators form a chain; its deepest member is the immediate parent.
+fn dominator_order(g: IR, dom: [][]i64) -> []i64 {
+    var children: [][]i64 = [];
+    var b: i64 = 0;
+    while b < len(g.blocks) {
+        var empty: []i64 = [];
+        push(children, empty);
+        b = b + 1;
+    }
+    b = 1;
+    while b < len(g.blocks) {
+        if g.blocks[b].alive {
+            var parent: i64 = 0;
+            var best: i64 = - 1;
+            var d: i64 = 0;
+            while d < len(g.blocks) {
+                if d != b && dom[b][d] == 1 {
+                    var depth: i64 = 0;
+                    var j: i64 = 0;
+                    while j < len(g.blocks) {
+                        depth = depth + dom[d][j];
+                        j = j + 1;
+                    }
+                    if depth > best {
+                        best = depth;
+                        parent = d;
+                    }
+                }
+                d = d + 1;
+            }
+            push(children[parent], b);
+        }
+        b = b + 1;
+    }
+    var result: []i64 = [];
+    var work: []i64 = [0];
+    while len(work) > 0 {
+        let n: i64 = work[len(work) - 1];
+        pop(work);
+        push(result, n);
+        var j: i64 = len(children[n]) - 1;
+        while j >= 0 {
+            push(work, children[n][j]);
+            j = j - 1;
+        }
+    }
+    return result;
+}
+
+fn gvn(g: IR) -> void {
+    let dom: [][]i64 = dominators(g);
+    let table: StringMap = map_new();
+    var ids: []i64 = [];
+    var next: []i64 = [];
+    let order: []i64 = dominator_order(g, dom);
+    var bi: i64 = 0;
+    while bi < len(order) {
+        let block: i64 = order[bi];
+        var ci: i64 = 0;
+        while ci < len(g.blocks[block].code) {
+            let i: i64 = g.blocks[block].code[ci];
+            let x: Inst = g.ins[i];
+            if live_inst(g, i) && x.block == block && pure(x.op) && x.op != "const" && x.op != "arg" && x.op != "string" {
+                let key: str = instruction_key(g, i);
+                let head: i64 = map_get(table, key);
+                var j: i64 = head;
+                var found: bool = false;
+                while j >= 0 && ! found {
+                    let other: i64 = canonical(g, ids[j]);
+                    let ob: i64 = g.ins[other].block;
+                    if dom[x.block][ob] == 1 &&(ob != x.block || position(g, other) < position(g, i)) {
+                        g.ins[i].repl = other;
+                        found = true;
+                    }
+                    j = next[j];
+                }
+                if ! found {
+                    map_put(table, key, len(ids));
+                    push(ids, i);
+                    push(next, head);
+                }
+            }
+            ci = ci + 1;
+        }
+        bi = bi + 1;
+    }
+}
+
+fn licm(g: IR) -> void {
+    let dom: [][]i64 = dominators(g);
+    let n: i64 = len(g.blocks);
+    var h: i64 = 0;
+    while h < n {
+        if g.blocks[h].alive {
+            var members: []i64 = [];
+            var work: []i64 = [];
+            var i: i64 = 0;
+            while i < n {
+                push(members, 0);
+                i = i + 1;
+            }
+            members[h] = 1;
+            var latch: i64 = 0;
+            while latch < n {
+                if g.blocks[latch].alive && has(g.blocks[latch].targets, h) && dom[latch][h] == 1 {
+                    push(work, latch);
+                }
+                latch = latch + 1;
+            }
+            if len(work) > 0 {
+                while len(work) > 0 {
+                    let b: i64 = work[len(work) - 1];
+                    pop(work);
+                    if members[b] == 0 {
+                        members[b] = 1;
+                        i = 0;
+                        while i < len(g.blocks[b].preds) {
+                            push(work, g.blocks[b].preds[i]);
+                            i = i + 1;
+                        }
+                    }
+                }
+                var pre: i64 = - 1;
+                var count: i64 = 0;
+                i = 0;
+                while i < len(g.blocks[h].preds) {
+                    let p: i64 = g.blocks[h].preds[i];
+                    if members[p] == 0 {
+                        pre = p;
+                        count = count + 1;
+                    }
+                    i = i + 1;
+                }
+                if count == 1 && g.blocks[pre].term == "jump" {
+                    var changed: bool = true;
+                    while changed {
+                        changed = false;
+                        i = 0;
+                        while i < len(g.ins) {
+                            let x: Inst = g.ins[i];
+                            if live_inst(g, i) && members[x.block] == 1 && pure(x.op) && x.op != "const" && x.op != "arg" && x.op != "string" {
+                                let xs: []i64 = operands(x);
+                                var safe: bool = true;
+                                var j: i64 = 0;
+                                while j < len(xs) {
+                                    let v: i64 = canonical(g, xs[j]);
+                                    if members[g.ins[v].block] == 1 && g.ins[v].op != "const" && g.ins[v].op != "arg" && g.ins[v].op != "string" {
+                                        safe = false;
+                                    }
+                                    j = j + 1;
+                                }
+                                if safe {
+                                    g.ins[i].block = pre;
+                                    push(g.blocks[pre].code, i);
+                                    changed = true;
+                                }
+                            }
+                            i = i + 1;
+                        }
+                    }
+                }
+            }
+        }
+        h = h + 1;
+    }
+}
+
+fn verify_ir(g: IR) -> void {
+    let dom: [][]i64 = dominators(g);
+    var b: i64 = 0;
+    while b < len(g.blocks) {
+        if g.blocks[b].alive {
+            if g.blocks[b].term == "" {
+                error(g.s, g.s.functions[g.fid].tok, "IR verification: unterminated block");
+            }
+            let term: Block = g.blocks[b];
+            let where: i64 = g.s.functions[g.fid].tok;
+            if ! term.sealed {
+                error(g.s, where, "IR verification: unsealed live block");
+            }
+            if term.term == "branch" {
+                if len(term.targets) != 2 || len(term.values) != 1 {
+                    error(g.s, where, "IR verification: invalid branch");
+                }
+                expect(g, g.ins[canonical(g, term.values[0])].ty, "bool", where);
+            }
+            if term.term == "jump" && len(term.targets) != 1 {
+                error(g.s, where, "IR verification: invalid jump");
+            }
+            if term.term == "return" {
+                let ret: str = g.s.functions[g.fid].ret;
+                if ret == "void" {
+                    if len(term.values) != 0 {
+                        error(g.s, where, "IR verification: invalid void return");
+                    }
+                } else {
+                    if len(term.values) != 1 {
+                        error(g.s, where, "IR verification: missing return value");
+                    }
+                    expect(g, g.ins[canonical(g, term.values[0])].ty, ret, where);
+                }
+            }
+            var vi: i64 = 0;
+            while vi < len(term.values) {
+                let v: i64 = canonical(g, term.values[vi]);
+                let def: Inst = g.ins[v];
+                if def.dead || def.op != "const" && def.op != "string" && def.op != "arg" && dom[b][def.block] == 0 {
+                    error(g.s, where, "IR verification: invalid terminator operand");
+                }
+                vi = vi + 1;
+            }
+            var i: i64 = 0;
+            while i < len(g.blocks[b].code) {
+                let id: i64 = g.blocks[b].code[i];
+                let x: Inst = g.ins[id];
+                if live_inst(g, id) && x.block == b {
+                    if find(["add", "sub", "mul", "div", "rem", "shl", "shr", "and", "or", "xor"], x.op) >= 0 {
+                        expect(g, g.ins[canonical(g, x.a)].ty, x.ty, where);
+                        expect(g, g.ins[canonical(g, x.b)].ty, x.ty, where);
+                    }
+                    if find(["eq", "ne", "lt", "le", "gt", "ge"], x.op) >= 0 {
+                        expect(g, x.ty, "bool", where);
+                        expect(g, g.ins[canonical(g, x.a)].ty, g.ins[canonical(g, x.b)].ty, where);
+                    }
+                    if x.op == "phi" {
+                        if len(x.args) != len(g.blocks[b].preds) || len(x.labels) != len(x.args) {
+                            error(g.s, g.s.functions[g.fid].tok, "IR verification: phi predecessor mismatch");
+                        }
+                        var pi: i64 = 0;
+                        while pi < len(x.labels) {
+                            if ! has(g.blocks[b].preds, x.labels[pi]) {
+                                error(g.s, where, "IR verification: phi references a non-predecessor");
+                            }
+                            var pj: i64 = 0;
+                            while pj < pi {
+                                if x.labels[pj] == x.labels[pi] {
+                                    error(g.s, where, "IR verification: duplicate phi edge");
+                                }
+                                pj = pj + 1;
+                            }
+                            pi = pi + 1;
+                        }
+                    }
+                    let xs: []i64 = operands(x);
+                    var j: i64 = 0;
+                    while j < len(xs) {
+                        let v: i64 = canonical(g, xs[j]);
+                        let def: Inst = g.ins[v];
+                        var useblock: i64 = b;
+                        if x.op == "phi" {
+                            useblock = x.labels[j];
+                            expect(g, def.ty, x.ty, g.s.functions[g.fid].tok);
+                        }
+                        if def.dead {
+                            error(g.s, g.s.functions[g.fid].tok, "IR verification: use of deleted value");
+                        }
+                        if def.op != "const" && def.op != "arg" && def.op != "string" {
+                            if dom[useblock][def.block] == 0 {
+                                error(g.s, g.s.functions[g.fid].tok, "IR verification: non-dominating definition %" + itoa(v) + " at %" + itoa(id));
+                            }
+                            if x.op != "phi" && def.block == b && def.op != "phi" && position(g, v) >= position(g, id) {
+                                error(g.s, g.s.functions[g.fid].tok, "IR verification: definition after use");
+                            }
+                        }
+                        j = j + 1;
+                    }
+                }
+                i = i + 1;
+            }
+        }
+        b = b + 1;
+    }
+}

@@ -1,0 +1,35 @@
+fn tick(hits: []i64, n: i64) -> i64 {
+    push(hits, n);
+    return n;
+}
+
+fn never(n: i64) -> i64 {
+    let empty: []i64 = [];
+    var i: i64 = 0;
+    while i < n {
+        let invalid: i64 = empty[0];
+        let zero: i64 = 1 / 0;
+        i = i + 1;
+    }
+    return i;
+}
+
+fn main() -> i64 {
+    let hits: []i64 = [];
+    let xs: []i64 = [0, 0];
+    xs[tick(hits, 1)] = tick(hits, 7);
+    let left: bool = false && tick(hits, 9) == 9;
+    let right: bool = true || tick(hits, 8) == 8;
+    let guarded: bool = false && 1 / 0 == 0;
+    let v: i64 = tick(hits, 2) + tick(hits, 3);
+    println_int(len(hits));
+    println_int(hits[0]);
+    println_int(hits[1]);
+    println_int(hits[2]);
+    println_int(hits[3]);
+    println_int(xs[1]);
+    println_int(v);
+    println_int((left || right || guarded) as i64);
+    println_int(never(0));
+    return 0;
+}

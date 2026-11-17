@@ -1,0 +1,11 @@
+fn println_int(value: i64) -> void {
+    println(itoa(value));
+}
+
+fn write(text: str) -> void {
+    print(text);
+}
+
+fn read(path: str) -> str {
+    return read_file(path);
+}

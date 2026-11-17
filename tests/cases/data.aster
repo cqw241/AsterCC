@@ -1,0 +1,66 @@
+import std.io;
+import std.text;
+import std.collections;
+struct Point {
+    x: i64, y: i64,
+}
+struct Bag {
+    point: Point, values: []i64,
+}
+
+fn main() -> i64 {
+    let p: Point = Point {
+        x: 1, y: 2,
+    };
+    var q: Point = p;
+    q.x = 9;
+    io::println_int(p.x);
+    io::println_int(q.x);
+    let a: Bag = Bag {
+        point: p, values: [4],
+    };
+    var b: Bag = a;
+    b.point.y = 8;
+    push(b.values, 6);
+    println_int(a.point.y);
+    println_int(b.point.y);
+    println_int(len(a.values));
+    let bags: []Bag = [a, b];
+    bags[0].point.x = 12;
+    println_int(bags[0].point.x);
+    println_int(a.point.x);
+    var xs: []i64 = [];
+    let alias: []i64 = xs;
+    var i: i64 = 0;
+    while i < 100 {
+        push(xs, i);
+        i = i + 1;
+    }
+    println_int(alias[99]);
+    let bits: []bool = [true, false];
+    bits[1] = true;
+    println_int(bits[1] as i64);
+    let matrix: [][]i64 = [[1, 2], [3, 4]];
+    matrix[1][0] = 7;
+    println_int(matrix[1][0]);
+    let builder: StringBuilder = builder_new();
+    builder_append(builder, "Hello");
+    builder_append(builder, " Aster");
+    println(builder_finish(builder));
+    let map: StringMap = map_new();
+    i = 0;
+    while i < 80 {
+        map_put(map, itoa(i), i * 2);
+        i = i + 1;
+    }
+    map_put(map, "17", 42);
+    println_int(map_get(map, "17"));
+    println_int(map_get(map, "79"));
+    println_int(map_get(map, "missing"));
+    println_int(len("a\0b"));
+    println_int("AZ"[1] as i64);
+    println_int((slice("abcd", 1, 2) == "bc") as i64);
+    println("你好🌟");
+    println_int(len("你好🌟"));
+    return 0;
+}

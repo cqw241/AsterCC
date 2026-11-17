@@ -1,0 +1,25 @@
+fn kernel(n: i64) -> i64 {
+    var i: i64 = 0;
+    var sum: i64 = 0;
+    var factor: i64 = 8;
+    if 2 * 3 == 6 {
+        factor = 3;
+    } else {
+        factor = 900;
+    }
+    while i < n {
+        if factor == 3 {
+            sum = sum + i * factor + 7;
+        } else {
+            sum = sum + 999;
+        }
+        i = i + 1;
+    }
+    return sum;
+}
+
+fn main() -> i64 {
+    let argv: []str = args();
+    println_int(kernel(parse_int(argv[1])));
+    return 0;
+}

@@ -1,0 +1,206 @@
+{
+  "compiler": "build/astercc0",
+  "passed": 32,
+  "results": [
+    {
+      "case": "control",
+      "optimization": 0,
+      "status": "pass",
+      "seconds": 0.096028,
+      "stdout": "31\n1\n25\n"
+    },
+    {
+      "case": "control",
+      "optimization": 1,
+      "status": "pass",
+      "seconds": 0.09353,
+      "stdout": "31\n1\n25\n"
+    },
+    {
+      "case": "control",
+      "optimization": 2,
+      "status": "pass",
+      "seconds": 0.109536,
+      "stdout": "31\n1\n25\n"
+    },
+    {
+      "case": "data",
+      "optimization": 0,
+      "status": "pass",
+      "seconds": 0.114248,
+      "stdout": "1\n9\n2\n8\n2\n12\n1\n99\n1\n7\nHello Aster\n42\n158\n-1\n3\n90\n1\n你好🌟\n10\n"
+    },
+    {
+      "case": "data",
+      "optimization": 1,
+      "status": "pass",
+      "seconds": 0.120623,
+      "stdout": "1\n9\n2\n8\n2\n12\n1\n99\n1\n7\nHello Aster\n42\n158\n-1\n3\n90\n1\n你好🌟\n10\n"
+    },
+    {
+      "case": "data",
+      "optimization": 2,
+      "status": "pass",
+      "seconds": 0.142058,
+      "stdout": "1\n9\n2\n8\n2\n12\n1\n99\n1\n7\nHello Aster\n42\n158\n-1\n3\n90\n1\n你好🌟\n10\n"
+    },
+    {
+      "case": "integers",
+      "optimization": 0,
+      "status": "pass",
+      "seconds": 0.102619,
+      "stdout": "-9223372036854775808\n-9223372036854775808\n0\n1\n-4\n4\n6\n8\n1\n1\n"
+    },
+    {
+      "case": "integers",
+      "optimization": 1,
+      "status": "pass",
+      "seconds": 0.111271,
+      "stdout": "-9223372036854775808\n-9223372036854775808\n0\n1\n-4\n4\n6\n8\n1\n1\n"
+    },
+    {
+      "case": "integers",
+      "optimization": 2,
+      "status": "pass",
+      "seconds": 0.114387,
+      "stdout": "-9223372036854775808\n-9223372036854775808\n0\n1\n-4\n4\n6\n8\n1\n1\n"
+    },
+    {
+      "case": "effects",
+      "optimization": 0,
+      "status": "pass",
+      "seconds": 0.095078,
+      "stdout": "4\n1\n7\n2\n3\n7\n5\n1\n0\n"
+    },
+    {
+      "case": "effects",
+      "optimization": 1,
+      "status": "pass",
+      "seconds": 0.105713,
+      "stdout": "4\n1\n7\n2\n3\n7\n5\n1\n0\n"
+    },
+    {
+      "case": "effects",
+      "optimization": 2,
+      "status": "pass",
+      "seconds": 0.113773,
+      "stdout": "4\n1\n7\n2\n3\n7\n5\n1\n0\n"
+    },
+    {
+      "case": "optimization",
+      "optimization": 0,
+      "status": "pass",
+      "seconds": 0.104826,
+      "stdout": "1290\n"
+    },
+    {
+      "case": "optimization",
+      "optimization": 1,
+      "status": "pass",
+      "seconds": 0.113831,
+      "stdout": "1290\n"
+    },
+    {
+      "case": "optimization",
+      "optimization": 2,
+      "status": "pass",
+      "seconds": 0.101647,
+      "stdout": "1290\n"
+    },
+    {
+      "case": "generated",
+      "optimization": 0,
+      "status": "pass",
+      "seconds": 0.097405,
+      "stdout": "5441557539386169670\n3967462524471946115\n805085364958713150\n-7525076373786967542\n-1409114138906170700\n117338762833663426\n5049593438752602935\n-8262357383121800628\n-6300667095297487587\n-859045293985779270\n-5231563914050294257\n4598806316258146843\n-5900944648519711815\n1360630309835517988\n-84275360461812038\n1257290793069725067\n"
+    },
+    {
+      "case": "generated",
+      "optimization": 1,
+      "status": "pass",
+      "seconds": 0.119609,
+      "stdout": "5441557539386169670\n3967462524471946115\n805085364958713150\n-7525076373786967542\n-1409114138906170700\n117338762833663426\n5049593438752602935\n-8262357383121800628\n-6300667095297487587\n-859045293985779270\n-5231563914050294257\n4598806316258146843\n-5900944648519711815\n1360630309835517988\n-84275360461812038\n1257290793069725067\n"
+    },
+    {
+      "case": "generated",
+      "optimization": 2,
+      "status": "pass",
+      "seconds": 0.106851,
+      "stdout": "5441557539386169670\n3967462524471946115\n805085364958713150\n-7525076373786967542\n-1409114138906170700\n117338762833663426\n5049593438752602935\n-8262357383121800628\n-6300667095297487587\n-859045293985779270\n-5231563914050294257\n4598806316258146843\n-5900944648519711815\n1360630309835517988\n-84275360461812038\n1257290793069725067\n"
+    },
+    {
+      "case": "diagnostic-lexical",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-lexical.aster:1:18: error: invalid character\nfn main()->i64 { @ return 0; }\n                 ^\n"
+    },
+    {
+      "case": "diagnostic-number",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-number.aster:1:25: error: invalid integer literal (expected a 64-bit decimal or hexadecimal value)\nfn main()->i64 { return 123xyz; }\n                        ^\n"
+    },
+    {
+      "case": "diagnostic-syntax",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-syntax.aster:1:26: error: expected expression\nfn main()->i64 { let a = ;return 0; }\n                         ^\n"
+    },
+    {
+      "case": "diagnostic-name",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-name.aster:1:25: error: undefined variable missing\nfn main()->i64 { return missing; }\n                        ^\n"
+    },
+    {
+      "case": "diagnostic-unreachable",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-unreachable.aster:1:39: error: undefined variable missing\nfn main()->i64 { return 0;println_int(missing); }\n                                      ^\n"
+    },
+    {
+      "case": "diagnostic-type",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-type.aster:1:18: error: type mismatch: expected i64, got bool\nfn main()->i64 { let a:i64=true;return 0; }\n                 ^\n"
+    },
+    {
+      "case": "diagnostic-immutable",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-immutable.aster:1:26: error: cannot assign to let binding\nfn main()->i64 { let a=1;a=2;return 0; }\n                         ^\n"
+    },
+    {
+      "case": "diagnostic-return",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-return.aster:1:1: error: missing return in function main\nfn main()->i64 { let a=1; }\n^\n"
+    },
+    {
+      "case": "diagnostic-break",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-break.aster:1:18: error: break outside a loop\nfn main()->i64 { break;return 0; }\n                 ^\n"
+    },
+    {
+      "case": "diagnostic-layout",
+      "status": "pass",
+      "stderr": "/mnt/d/学习资料/专业课/大三上/编译技术/实验三/artifacts/tmp/tests/astercc0/bad-layout.aster:1:1: error: infinitely recursive value record R\nstruct R { child:R, } fn main()->i64 { return 0; }\n^\n"
+    },
+    {
+      "case": "trap-bounds",
+      "optimization": 0,
+      "status": "pass",
+      "stderr": "aster: array index out of bounds\n"
+    },
+    {
+      "case": "trap-bounds",
+      "optimization": 2,
+      "status": "pass",
+      "stderr": "aster: array index out of bounds\n"
+    },
+    {
+      "case": "trap-division",
+      "optimization": 0,
+      "status": "pass",
+      "stderr": "aster: division by zero\n"
+    },
+    {
+      "case": "trap-division",
+      "optimization": 2,
+      "status": "pass",
+      "stderr": "aster: division by zero\n"
+    }
+  ]
+}

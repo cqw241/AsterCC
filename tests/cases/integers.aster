@@ -1,0 +1,22 @@
+enum Color {
+    Red, Green = 7, Blue,
+}
+
+fn main() -> i64 {
+    var max: i64 = 0x7fffffffffffffff;
+    let min: i64 = max + 1;
+    println_int(min);
+    println_int(min / - 1);
+    println_int(min % - 1);
+    println_int(1 << 64);
+    println_int( - 8 >> 65);
+    var small: u8 = 250;
+    small = small + 10;
+    println_int(small as i64);
+    let shifted: u8 =(3 as u8) <<(9 as u8);
+    println_int(shifted as i64);
+    println_int((Color::Blue as i64));
+    println_int((Color::Green == Color::Green) as i64);
+    println_int(((255 as u8) >(128 as u8)) as i64);
+    return 0;
+}

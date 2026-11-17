@@ -1,0 +1,392 @@
+import compiler.model;
+import compiler.frontend;
+import compiler.ssa;
+import compiler.optimize;
+import compiler.llvm;
+struct Options {
+    input: str, output: str, emit: str, opt: i64, llvm: i64, passes: str, verify: bool, stats: str, trace: str,
+    check: bool,
+}
+
+fn json_quote(s: str) -> str {
+    var chars: []str = ["\""];
+    var i: i64 = 0;
+    while i < len(s) {
+        let c: i64 = byte(s, i);
+        if c == 34 {
+            push(chars, "\\\"");
+        } else {
+            if c == 92 {
+                push(chars, "\\\\");
+            } else {
+                if c < 32 {
+                    push(chars, "\\u00" + hex_digit(c / 16) + hex_digit(c % 16));
+                } else {
+                    push(chars, chr(c));
+                }
+            }
+        }
+        i = i + 1;
+    }
+    push(chars, "\"");
+    return join(chars, "");
+}
+
+fn parse_options(argv: []str) -> Options {
+    var o: Options = Options {
+        input: "", output: "", emit: "exe", opt: 0, llvm: - 1, passes: "", verify: false, stats: "", trace: "",
+        check: false,
+    };
+    var i: i64 = 1;
+    while i < len(argv) {
+        let a: str = argv[i];
+        if a == "--help" {
+            println("AsterCC 0.1.0\nUsage: astercc source.aster [-o output] [-O0|-O1|-O2]\n  --check --emit=ast|ssa|llvm|obj|exe --llvm-opt=0|1|2\n  --passes=simplify,sccp,cfg,dce,gvn,licm --verify-ir\n  --stats-json PATH --trace-dir DIRECTORY");
+            exit(0);
+        } else {
+            if a == "--version" {
+                println("AsterCC 0.1.0 (Aster SSA / LLVM 18)");
+                exit(0);
+            } else {
+                if a == "-o" || a == "--stats-json" || a == "--trace-dir" {
+                    i = i + 1;
+                    if i >= len(argv) {
+                        eprint("missing value for " + a + "\n");
+                        exit(2);
+                    }
+                    if a == "-o" {
+                        o.output = argv[i];
+                    } else {
+                        if a == "--stats-json" {
+                            o.stats = argv[i];
+                        } else {
+                            o.trace = argv[i];
+                        }
+                    }
+                } else {
+                    if a == "-O0" || a == "-O1" || a == "-O2" {
+                        o.opt = parse_int(slice(a, 2, 1));
+                    } else {
+                        if starts(a, "--emit=") {
+                            o.emit = slice(a, 7, len(a) - 7);
+                        } else {
+                            if starts(a, "--llvm-opt=") {
+                                o.llvm = parse_int(slice(a, 11, len(a) - 11));
+                            } else {
+                                if starts(a, "--passes=") {
+                                    o.passes = slice(a, 9, len(a) - 9);
+                                } else {
+                                    if a == "--verify-ir" {
+                                        o.verify = true;
+                                    } else {
+                                        if a == "--check" {
+                                            o.check = true;
+                                        } else {
+                                            if starts(a, "-") {
+                                                eprint("unknown option " + a + "\n");
+                                                exit(2);
+                                            } else {
+                                                if o.input != "" {
+                                                    eprint("exactly one entry module is required\n");
+                                                    exit(2);
+                                                }
+                                                o.input = a;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        i = i + 1;
+    }
+    if o.input == "" {
+        eprint("usage: astercc source.aster [-o output] [-O0|-O1|-O2]\n");
+        exit(2);
+    }
+    if find(["ast", "ssa", "llvm", "obj", "exe"], o.emit) < 0 {
+        eprint("invalid emission kind\n");
+        exit(2);
+    }
+    if o.llvm < 0 {
+        o.llvm = o.opt;
+    }
+    if o.llvm > 2 {
+        eprint("LLVM optimization level must be 0, 1 or 2\n");
+        exit(2);
+    }
+    if o.output == "" {
+        o.output = "a.out";
+        if o.emit == "llvm" {
+            o.output = "a.ll";
+        }
+        if o.emit == "ssa" {
+            o.output = "a.ssa";
+        }
+        if o.emit == "ast" {
+            o.output = "a.ast.json";
+        }
+        if o.emit == "obj" {
+            o.output = "a.o";
+        }
+    }
+    return o;
+}
+
+fn split_commas(s: str) -> []str {
+    var xs: []str = [];
+    var begin: i64 = 0;
+    var i: i64 = 0;
+    while i <= len(s) {
+        if i == len(s) || byte(s, i) == 44 {
+            push(xs, slice(s, begin, i - begin));
+            begin = i + 1;
+        }
+        i = i + 1;
+    }
+    return xs;
+}
+
+fn pass_requires(p: str) -> str {
+    if p == "gvn" || p == "licm" {
+        return "dominators";
+    }
+    if p == "sccp" || p == "dce" {
+        return "use-def";
+    }
+    return "none";
+}
+
+fn pass_invalidates(p: str) -> str {
+    if p == "sccp" || p == "cfg" {
+        return "cfg,dominators,loops,use-def";
+    }
+    return "use-def";
+}
+
+fn optimize(g: IR, o: Options, stats: []str) -> void {
+    var passes: []str = [];
+    if o.opt >= 1 {
+        passes = ["simplify", "sccp", "cfg", "dce"];
+    }
+    if o.opt == 2 {
+        passes = ["simplify", "sccp", "cfg", "dce", "gvn", "licm", "simplify", "sccp", "cfg", "dce"];
+    }
+    if o.passes != "" {
+        passes = split_commas(o.passes);
+    }
+    if o.verify {
+        verify_ir(g);
+    }
+    if o.trace != "" {
+        write_file(o.trace + "/" + itoa(g.fid) + "-00-input.ssa", dump_ir(g));
+    }
+    var i: i64 = 0;
+    while i < len(passes) {
+        let p: str = passes[i];
+        let before: i64 = count_ir(g);
+        var states: []str = [];
+        var j: i64 = 0;
+        if o.stats != "" {
+            while j < len(g.ins) {
+                let x: Inst = g.ins[j];
+                push(states, instruction_key(g, j) + ":" + itoa(x.block) + ":" + itoa(x.repl) + ":" + itoa(x.dead as i64));
+                j = j + 1;
+            }
+        }
+        let begin: i64 = clock_ns();
+        if p == "simplify" {
+            simplify(g);
+        } else {
+            if p == "sccp" {
+                sccp(g);
+            } else {
+                if p == "cfg" {
+                    cfg_simplify(g);
+                } else {
+                    if p == "dce" {
+                        dce(g);
+                    } else {
+                        if p == "gvn" {
+                            gvn(g);
+                        } else {
+                            if p == "licm" {
+                                licm(g);
+                            } else {
+                                error(g.s, g.s.functions[g.fid].tok, "unknown pass " + p);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        let elapsed: i64 = clock_ns() - begin;
+        if o.verify {
+            verify_ir(g);
+        }
+        if o.stats != "" {
+            var changes: i64 = 0;
+            j = 0;
+            while j < len(g.ins) {
+                let x: Inst = g.ins[j];
+                if states[j] != instruction_key(g, j) + ":" + itoa(x.block) + ":" + itoa(x.repl) + ":" + itoa(x.dead as i64) {
+                    changes = changes + 1;
+                }
+                j = j + 1;
+            }
+            push(stats, "{\"function\":" + json_quote(g.s.functions[g.fid].name) + ",\"pass\":" + json_quote(p) + ",\"requires\":" + json_quote(pass_requires(p)) + ",\"invalidates\":" + json_quote(pass_invalidates(p)) + ",\"changed_instructions\":" + itoa(changes) + ",\"before\":" + itoa(before) + ",\"after\":" + itoa(count_ir(g)) + ",\"ns\":" + itoa(elapsed) + "}");
+        }
+        if o.trace != "" {
+            write_file(o.trace + "/" + itoa(g.fid) + "-" + itoa(i + 1) + "-" + p + ".ssa", dump_ir(g));
+        }
+        i = i + 1;
+    }
+}
+
+fn dump_ast(s: State) -> str {
+    var nodes: []str = [];
+    var functions: []str = [];
+    var records: []str = [];
+    var i: i64 = 0;
+    while i < len(s.nodes) {
+        let n: Node = s.nodes[i];
+        var kids: []str = [];
+        var j: i64 = 0;
+        while j < len(n.kids) {
+            push(kids, itoa(n.kids[j]));
+            j = j + 1;
+        }
+        push(nodes, "{\"id\":" + itoa(i) + ",\"tag\":" + json_quote(n.tag) + ",\"text\":" + json_quote(n.text) + ",\"type\":" + json_quote(n.ty) + ",\"a\":" + itoa(n.a) + ",\"b\":" + itoa(n.b) + ",\"c\":" + itoa(n.c) + ",\"children\":[" + join(kids,
+        ",") + "],\"file\":" + itoa(s.tokens[n.tok].file) + ",\"offset\":" + itoa(s.tokens[n.tok].pos) + "}");
+        i = i + 1;
+    }
+    i = 0;
+    while i < len(s.functions) {
+        let f: Function = s.functions[i];
+        var params: []str = [];
+        var j: i64 = 0;
+        while j < len(f.names) {
+            push(params, "{\"name\":" + json_quote(f.names[j]) + ",\"type\":" + json_quote(f.types[j]) + "}");
+            j = j + 1;
+        }
+        push(functions, "{\"name\":" + json_quote(f.module + "::" + f.name) + ",\"parameters\":[" + join(params,
+        ",") + "],\"return\":" + json_quote(f.ret) + ",\"body\":" + itoa(f.body) + "}");
+        i = i + 1;
+    }
+    i = 0;
+    while i < len(s.records) {
+        let r: Record = s.records[i];
+        var fields: []str = [];
+        var j: i64 = 0;
+        while j < len(r.names) {
+            push(fields, "{\"name\":" + json_quote(r.names[j]) + ",\"type\":" + json_quote(r.types[j]) + "}");
+            j = j + 1;
+        }
+        push(records, "{\"name\":" + json_quote(r.name) + ",\"fields\":[" + join(fields, ",") + "]}");
+        i = i + 1;
+    }
+    return "{\"records\":[" + join(records, ",") + "],\"functions\":[" + join(functions, ",") + "],\"nodes\":[\n" + join(nodes,
+    ",\n") + "\n]}\n";
+}
+
+fn main() -> i64 {
+    let o: Options = parse_options(args());
+    var root: str = env("ASTERCC_ROOT");
+    if root == "" {
+        root = ".";
+    }
+    let s: State = new_state(root);
+    load_module(s, o.input, "main");
+    var r: i64 = 0;
+    while r < len(s.records) {
+        check_layout(s, s.records[r].name, [], s.records[r].tok);
+        r = r + 1;
+    }
+    var entry: i64 = - 1;
+    var i: i64 = 0;
+    while i < len(s.functions) {
+        let f: Function = s.functions[i];
+        map_put(s.symbols, f.module + "::" + f.name, i);
+        let old: i64 = map_get(s.symbols, "*::" + f.name);
+        if old == - 1 {
+            map_put(s.symbols, "*::" + f.name, i);
+        } else {
+            map_put(s.symbols, "*::" + f.name, - 2);
+        }
+        if f.name == "main" && f.module == "main" {
+            entry = i;
+        }
+        i = i + 1;
+    }
+    if entry < 0 {
+        eprint("error: entry module needs fn main() -> i64\n");
+        return 1;
+    }
+    if len(s.functions[entry].types) != 0 || s.functions[entry].ret != "i64" {
+        error(s, s.functions[entry].tok, "main must have type fn() -> i64");
+    }
+    if o.trace != "" {
+        if run(["mkdir", "-p", o.trace]) != 0 {
+            return 1;
+        }
+    }
+    var globals: []str = [];
+    var functions: []str = [];
+    var ssa: []str = [];
+    var stats: []str = [];
+    i = 0;
+    while i < len(s.functions) {
+        if s.nodes[s.functions[i].body].tag != "enumvalue" {
+            let g: IR = lower_function(s, i);
+            optimize(g, o, stats);
+            if ! o.check {
+                push(ssa, dump_ir(g));
+                if o.emit != "ssa" && o.emit != "ast" {
+                    push(globals, llvm_literals(g));
+                    push(functions, llvm_function(g));
+                }
+            }
+        }
+        i = i + 1;
+    }
+    if o.stats != "" {
+        write_file(o.stats, "[\n" + join(stats, ",\n") + "\n]\n");
+    }
+    if o.check {
+        return 0;
+    }
+    if o.emit == "ssa" {
+        return write_file(o.output, join(ssa, "\n"));
+    }
+    if o.emit == "ast" {
+        return write_file(o.output, dump_ast(s));
+    }
+    let llvm: str = llvm_prelude(s) + join(globals, "") + join(functions, "\n") + "\ndefine i64 @aster_entry() {\nentry:\n  %result = call i64 " + llvm_symbol(s,
+    entry) + "()\n  ret i64 %result\n}\n";
+    if o.emit == "llvm" {
+        return write_file(o.output, llvm);
+    }
+    let intermediate: str = o.output + ".ll";
+    if write_file(intermediate, llvm) != 0 {
+        return 1;
+    }
+    var clang: str = env("ASTERCC_CLANG");
+    if clang == "" {
+        clang = root + "/.toolchain/usr/lib/llvm-18/bin/clang";
+    }
+    var command: []str = [clang, "-Wno-override-module", "-O" + itoa(o.llvm), "-x", "ir", intermediate];
+    if o.emit == "obj" {
+        push(command, "-c");
+    } else {
+        push(command, "-x");
+        push(command, "none");
+        push(command, root + "/build/libasterrt.a");
+        push(command, "-Wl,--build-id=none");
+    }
+    push(command, "-o");
+    push(command, o.output);
+    return run(command);
+}

@@ -1,0 +1,332 @@
+// LLVM is a target backend, not the owner of Aster's SSA or optimizer.
+fn llvm_type(s: State, t: str) -> str {
+    if t == "i64" || enum_type(s, t) {
+        return "i64";
+    }
+    if t == "u8" {
+        return "i8";
+    }
+    if t == "bool" {
+        return "i1";
+    }
+    if t == "void" {
+        return "void";
+    }
+    if t == "str" || starts(t, "[]") {
+        return "ptr";
+    }
+    return "%R_" + t;
+}
+
+fn llvm_value(g: IR, id: i64) -> str {
+    let v: i64 = canonical(g, id);
+    let x: Inst = g.ins[v];
+    if x.op == "const" {
+        return x.text;
+    }
+    if x.op == "arg" {
+        return "%p" + x.text;
+    }
+    if x.op == "string" {
+        return "@ls_" + itoa(g.fid) + "_" + itoa(v);
+    }
+    return "%v" + itoa(v);
+}
+
+fn typed(g: IR, id: i64) -> str {
+    let v: i64 = canonical(g, id);
+    return llvm_type(g.s, g.ins[v].ty) + " " + llvm_value(g, v);
+}
+
+fn llvm_symbol(s: State, fid: i64) -> str {
+    return "@af_" + itoa(fid);
+}
+
+fn hex_digit(n: i64) -> str {
+    return slice("0123456789ABCDEF", n, 1);
+}
+
+fn escaped_bytes(text: str) -> str {
+    var parts: []str = [];
+    var i: i64 = 0;
+    while i < len(text) {
+        let c: i64 = byte(text, i);
+        push(parts, "\\" + hex_digit(c / 16) + hex_digit(c % 16));
+        i = i + 1;
+    }
+    return join(parts, "");
+}
+
+fn llvm_literals(g: IR) -> str {
+    var lines: []str = [];
+    var i: i64 = 0;
+    while i < len(g.ins) {
+        let x: Inst = g.ins[i];
+        if x.op == "string" {
+            let suffix: str = itoa(g.fid) + "_" + itoa(i);
+            push(lines, "@lb_" + suffix + " = private constant [" + itoa(len(x.text) + 1) + " x i8] c\"" + escaped_bytes(x.text) + "\\00\"\n");
+            push(lines, "@ls_" + suffix + " = private constant %AsterString { ptr @lb_" + suffix + ", i64 " + itoa(len(x.text)) + " }\n");
+        }
+        i = i + 1;
+    }
+    return join(lines, "");
+}
+
+fn llvm_inst(g: IR, id: i64) -> str {
+    let x: Inst = g.ins[id];
+    let op: str = x.op;
+    let dst: str = "%v" + itoa(id);
+    let ty: str = llvm_type(g.s, x.ty);
+    var a: str = "";
+    var b: str = "";
+    var at: str = "";
+    if x.a >= 0 {
+        a = llvm_value(g, x.a);
+        at = llvm_type(g.s, g.ins[canonical(g, x.a)].ty);
+    }
+    if x.b >= 0 {
+        b = llvm_value(g, x.b);
+    }
+    if op == "const" || op == "arg" || op == "string" {
+        return "";
+    }
+    if op == "phi" {
+        var parts: []str = [];
+        var i: i64 = 0;
+        while i < len(x.args) {
+            push(parts, "[ " + llvm_value(g, x.args[i]) + ", %b" + itoa(x.labels[i]) + " ]");
+            i = i + 1;
+        }
+        return dst + " = phi " + ty + " " + join(parts, ", ");
+    }
+    if op == "add" || op == "sub" || op == "mul" || op == "and" || op == "or" || op == "xor" {
+        return dst + " = " + op + " " + ty + " " + a + ", " + b;
+    }
+    if op == "shl" || op == "shr" {
+        var mask: str = "63";
+        if ty == "i8" {
+            mask = "7";
+        }
+        var instruction: str = op;
+        if op == "shr" {
+            instruction = "ashr";
+            if ty == "i8" {
+                instruction = "lshr";
+            }
+        }
+        return dst + "_mask = and " + ty + " " + b + ", " + mask + "\n  " + dst + " = " + instruction + " " + ty + " " + a + ", " + dst + "_mask";
+    }
+    if op == "div" || op == "rem" {
+        if ty == "i64" {
+            return dst + " = call i64 @rt_" + op + "(i64 " + a + ", i64 " + b + ")";
+        }
+        return dst + "_a = zext i8 " + a + " to i64\n  " + dst + "_b = zext i8 " + b + " to i64\n  " + dst + "_r = call i64 @rt_" + op + "(i64 " + dst + "_a, i64 " + dst + "_b)\n  " + dst + " = trunc i64 " + dst + "_r to i8";
+    }
+    if op == "neg" {
+        return dst + " = sub " + ty + " 0, " + a;
+    }
+    if op == "not" || op == "inv" {
+        return dst + " = xor " + ty + " " + a + ", -1";
+    }
+    if op == "eq" || op == "ne" || op == "lt" || op == "le" || op == "gt" || op == "ge" {
+        if g.ins[canonical(g, x.a)].ty == "str" {
+            var cmp: str = "ne";
+            if op == "ne" {
+                cmp = "eq";
+            }
+            return dst + "_cmp = call i64 @rt_equal(ptr " + a + ", ptr " + b + ")\n  " + dst + " = icmp " + cmp + " i64 " + dst + "_cmp, 0";
+        }
+        var cmp: str = op;
+        if op != "eq" && op != "ne" {
+            cmp = "s" + op;
+            if at == "i8" {
+                cmp = "u" + op;
+            }
+        }
+        return dst + " = icmp " + cmp + " " + at + " " + a + ", " + b;
+    }
+    if op == "cast" {
+        if ty == at {
+            return dst + " = add " + ty + " " + a + ", 0";
+        }
+        if ty == "i1" {
+            return dst + " = icmp ne " + at + " " + a + ", 0";
+        }
+        var instruction: str = "zext";
+        if at == "i64" {
+            instruction = "trunc";
+        }
+        return dst + " = " + instruction + " " + at + " " + a + " to " + ty;
+    }
+    if op == "concat" {
+        return dst + " = call ptr @rt_concat(ptr " + a + ", ptr " + b + ")";
+    }
+    if op == "len" {
+        return dst + " = call i64 @rt_len(ptr " + a + ")";
+    }
+    if op == "byte" {
+        return dst + "_n = call i64 @rt_byte(ptr " + a + ", i64 " + b + ")\n  " + dst + " = trunc i64 " + dst + "_n to i8";
+    }
+    if op == "array" {
+        let et: str = llvm_type(g.s, x.text);
+        return dst + " = call ptr @rt_array(i64 ptrtoint (ptr getelementptr (" + et + ", ptr null, i32 1) to i64))";
+    }
+    if op == "get" {
+        return dst + "_ptr = call ptr @rt_at(ptr " + a + ", i64 " + b + ")\n  " + dst + " = load " + ty + ", ptr " + dst + "_ptr";
+    }
+    if op == "set" {
+        return dst + "_ptr = call ptr @rt_at(ptr " + a + ", i64 " + b + ")\n  store " + typed(g, x.args[0]) + ", ptr " + dst + "_ptr";
+    }
+    if op == "push" {
+        return "store " + typed(g, x.b) + ", ptr %slot" + itoa(id) + "\n  call void @rt_push(ptr " + a + ", ptr %slot" + itoa(id) + ")";
+    }
+    if op == "pop" {
+        return "call void @rt_pop(ptr " + a + ")";
+    }
+    if op == "extract" {
+        return dst + " = extractvalue " + typed(g, x.a) + ", " + x.text;
+    }
+    if op == "insert" {
+        return dst + " = insertvalue " + typed(g, x.a) + ", " + typed(g, x.b) + ", " + x.text;
+    }
+    if op == "record" {
+        if len(x.args) == 0 {
+            return dst + " = freeze " + ty + " zeroinitializer";
+        }
+        var parts: []str = [];
+        var i: i64 = 0;
+        while i < len(x.args) {
+            var prev: str = "zeroinitializer";
+            if i > 0 {
+                prev = dst + "_f" + itoa(i - 1);
+            }
+            var name: str = dst + "_f" + itoa(i);
+            if i == len(x.args) - 1 {
+                name = dst;
+            }
+            push(parts, name + " = insertvalue " + ty + " " + prev + ", " + typed(g, x.args[i]) + ", " + itoa(i));
+            i = i + 1;
+        }
+        return join(parts, "\n  ");
+    }
+    if op == "call" {
+        var target: str = "@rt_" + x.text;
+        if starts(x.text, "@") {
+            target = llvm_symbol(g.s, parse_int(slice(x.text, 1, len(x.text) - 1)));
+        }
+        var parts: []str = [];
+        var i: i64 = 0;
+        while i < len(x.args) {
+            push(parts, typed(g, x.args[i]));
+            i = i + 1;
+        }
+        var prefix: str = dst + " = ";
+        if ty == "void" {
+            prefix = "";
+        }
+        return prefix + "call " + ty + " " + target + "(" + join(parts, ", ") + ")";
+    }
+    error(g.s, g.s.functions[g.fid].tok, "LLVM emitter missing opcode " + op);
+    return "";
+}
+
+fn llvm_function(g: IR) -> str {
+    let f: Function = g.s.functions[g.fid];
+    var lines: []str = [];
+    var params: []str = [];
+    var i: i64 = 0;
+    while i < len(f.types) {
+        push(params, llvm_type(g.s, f.types[i]) + " %p" + itoa(i));
+        i = i + 1;
+    }
+    push(lines, "define " + llvm_type(g.s, f.ret) + " " + llvm_symbol(g.s, g.fid) + "(" + join(params,
+    ", ") + ") {\n");
+    var b: i64 = 0;
+    while b < len(g.blocks) {
+        if g.blocks[b].alive {
+            push(lines, "b" + itoa(b) + ":\n");
+            if b == 0 {
+                i = 0;
+                while i < len(g.ins) {
+                    let x: Inst = g.ins[i];
+                    if x.op == "push" && ! x.dead && x.repl < 0 {
+                        push(lines, "  %slot" + itoa(i) + " = alloca " + llvm_type(g.s, x.text) + "\n");
+                    }
+                    i = i + 1;
+                }
+            }
+            var phase: i64 = 0;
+            while phase < 2 {
+                i = 0;
+                while i < len(g.blocks[b].code) {
+                    let id: i64 = g.blocks[b].code[i];
+                    let x: Inst = g.ins[id];
+                    if ! x.dead && x.repl < 0 && x.block == b &&((phase == 0 && x.op == "phi") ||(phase == 1 && x.op != "phi")) {
+                        let line: str = llvm_inst(g, id);
+                        if line != "" {
+                            push(lines, "  " + line + "\n");
+                        }
+                    }
+                    i = i + 1;
+                }
+                phase = phase + 1;
+            }
+            let block: Block = g.blocks[b];
+            if block.term == "return" {
+                if len(block.values) == 0 {
+                    push(lines, "  ret void\n");
+                } else {
+                    push(lines, "  ret " + typed(g, block.values[0]) + "\n");
+                }
+            } else {
+                if block.term == "jump" {
+                    push(lines, "  br label %b" + itoa(block.targets[0]) + "\n");
+                } else {
+                    if block.term == "branch" {
+                        push(lines, "  br i1 " + llvm_value(g, block.values[0]) + ", label %b" + itoa(block.targets[0]) + ", label %b" + itoa(block.targets[1]) + "\n");
+                    } else {
+                        error(g.s, f.tok, "unterminated IR block");
+                    }
+                }
+            }
+        }
+        b = b + 1;
+    }
+    push(lines, "}\n");
+    return join(lines, "");
+}
+
+fn llvm_prelude(s: State) -> str {
+    var lines: []str = ["; AsterCC deterministic LLVM backend\nsource_filename = \"aster\"\ntarget triple = \"x86_64-pc-linux-gnu\"\n%AsterString = type { ptr, i64 }\n"];
+    var i: i64 = 0;
+    while i < len(s.records) {
+        let r: Record = s.records[i];
+        if ! enum_type(s, r.name) {
+            var fields: []str = [];
+            var j: i64 = 0;
+            while j < len(r.types) {
+                push(fields, llvm_type(s, r.types[j]));
+                j = j + 1;
+            }
+            push(lines, "%R_" + r.name + " = type { " + join(fields, ", ") + " }\n");
+        }
+        i = i + 1;
+    }
+    push(lines, "declare i64 @rt_len(ptr)\ndeclare ptr @rt_array(i64)\ndeclare ptr @rt_at(ptr, i64)\ndeclare void @rt_push(ptr, ptr)\ndeclare void @rt_pop(ptr)\ndeclare i64 @rt_byte(ptr, i64)\ndeclare ptr @rt_concat(ptr, ptr)\ndeclare i64 @rt_equal(ptr, ptr)\ndeclare i64 @rt_div(i64, i64)\ndeclare i64 @rt_rem(i64, i64)\n");
+    let names: []str = ["print", "eprint", "println", "print_int", "println_int", "exit", "read_file",
+    "write_file", "env", "itoa", "chr", "parse_int", "slice", "join", "args", "run", "clock_ns"];
+    i = 0;
+    while i < len(names) {
+        let types: []str = builtin_types(names[i]);
+        var args: []str = [];
+        var j: i64 = 0;
+        while j < len(types) {
+            push(args, llvm_type(s, types[j]));
+            j = j + 1;
+        }
+        push(lines, "declare " + llvm_type(s, builtin_ret(names[i])) + " @rt_" + names[i] + "(" + join(args,
+        ", ") + ")\n");
+        i = i + 1;
+    }
+    return join(lines, "");
+}

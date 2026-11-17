@@ -1,0 +1,23 @@
+fn kernel(n: i64, a: i64, b: i64) -> i64 {
+    var i: i64 = 0;
+    var sum: i64 = 0;
+    var choice: i64 = 11;
+    if true {
+        choice = 3;
+    } else {
+        choice = 99;
+    }
+    while i < n {
+        let repeated: i64 = a * b;
+        let duplicate: i64 = a * b;
+        let unused: i64 = a + 1000;
+        sum = sum + repeated + duplicate + choice;
+        i = i + 1;
+    }
+    return sum;
+}
+
+fn main() -> i64 {
+    println_int(kernel(10, 7, 9));
+    return 0;
+}
