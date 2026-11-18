@@ -1,0 +1,908 @@
+{
+  "input": {
+    "name": "main::kernel",
+    "blocks": [
+      {
+        "id": "b0",
+        "line": 2,
+        "instructions": [
+          {
+            "id": "%0",
+            "type": "i64",
+            "op": "arg",
+            "text": "%0:i64 = arg 0",
+            "line": 3,
+            "uses": []
+          },
+          {
+            "id": "%1",
+            "type": "i64",
+            "op": "arg",
+            "text": "%1:i64 = arg 1",
+            "line": 4,
+            "uses": []
+          },
+          {
+            "id": "%2",
+            "type": "i64",
+            "op": "arg",
+            "text": "%2:i64 = arg 2",
+            "line": 5,
+            "uses": []
+          },
+          {
+            "id": "%3",
+            "type": "i64",
+            "op": "const",
+            "text": "%3:i64 = const 0",
+            "line": 6,
+            "uses": []
+          },
+          {
+            "id": "%4",
+            "type": "i64",
+            "op": "const",
+            "text": "%4:i64 = const 0",
+            "line": 7,
+            "uses": []
+          },
+          {
+            "id": "%5",
+            "type": "i64",
+            "op": "const",
+            "text": "%5:i64 = const 11",
+            "line": 8,
+            "uses": []
+          },
+          {
+            "id": "%6",
+            "type": "bool",
+            "op": "const",
+            "text": "%6:bool = const 1",
+            "line": 9,
+            "uses": []
+          }
+        ],
+        "terminator": "branch %6, b1, b2",
+        "edges": [
+          {
+            "target": "b1",
+            "label": "true"
+          },
+          {
+            "target": "b2",
+            "label": "false"
+          }
+        ],
+        "terminator_line": 10,
+        "terminator_uses": ["%6"]
+      },
+      {
+        "id": "b1",
+        "line": 11,
+        "instructions": [
+          {
+            "id": "%7",
+            "type": "i64",
+            "op": "const",
+            "text": "%7:i64 = const 3",
+            "line": 12,
+            "uses": []
+          }
+        ],
+        "terminator": "jump b3",
+        "edges": [
+          {
+            "target": "b3",
+            "label": ""
+          }
+        ],
+        "terminator_line": 13,
+        "terminator_uses": []
+      },
+      {
+        "id": "b2",
+        "line": 14,
+        "instructions": [
+          {
+            "id": "%8",
+            "type": "i64",
+            "op": "const",
+            "text": "%8:i64 = const 99",
+            "line": 15,
+            "uses": []
+          }
+        ],
+        "terminator": "jump b3",
+        "edges": [
+          {
+            "target": "b3",
+            "label": ""
+          }
+        ],
+        "terminator_line": 16,
+        "terminator_uses": []
+      },
+      {
+        "id": "b3",
+        "line": 17,
+        "instructions": [
+          {
+            "id": "%30",
+            "type": "i64",
+            "op": "phi",
+            "text": "%30:i64 = phi 5 %7@b1, %8@b2",
+            "line": 18,
+            "uses": [
+              {
+                "value": "%7",
+                "predecessor": "b1"
+              },
+              {
+                "value": "%8",
+                "predecessor": "b2"
+              }
+            ]
+          }
+        ],
+        "terminator": "jump b4",
+        "edges": [
+          {
+            "target": "b4",
+            "label": ""
+          }
+        ],
+        "terminator_line": 19,
+        "terminator_uses": []
+      },
+      {
+        "id": "b4",
+        "line": 20,
+        "instructions": [
+          {
+            "id": "%9",
+            "type": "i64",
+            "op": "phi",
+            "text": "%9:i64 = phi 3 %3@b3, %24@b5",
+            "line": 21,
+            "uses": [
+              {
+                "value": "%3",
+                "predecessor": "b3"
+              },
+              {
+                "value": "%24",
+                "predecessor": "b5"
+              }
+            ]
+          },
+          {
+            "id": "%11",
+            "type": "bool",
+            "op": "lt",
+            "text": "%11:bool = lt  %9, %0",
+            "line": 22,
+            "uses": [
+              {
+                "value": "%9",
+                "predecessor": null
+              },
+              {
+                "value": "%0",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%18",
+            "type": "i64",
+            "op": "phi",
+            "text": "%18:i64 = phi 4 %4@b3, %22@b5",
+            "line": 23,
+            "uses": [
+              {
+                "value": "%4",
+                "predecessor": "b3"
+              },
+              {
+                "value": "%22",
+                "predecessor": "b5"
+              }
+            ]
+          }
+        ],
+        "terminator": "branch %11, b5, b6",
+        "edges": [
+          {
+            "target": "b5",
+            "label": "true"
+          },
+          {
+            "target": "b6",
+            "label": "false"
+          }
+        ],
+        "terminator_line": 24,
+        "terminator_uses": ["%11"]
+      },
+      {
+        "id": "b5",
+        "line": 25,
+        "instructions": [
+          {
+            "id": "%14",
+            "type": "i64",
+            "op": "mul",
+            "text": "%14:i64 = mul  %1, %2",
+            "line": 26,
+            "uses": [
+              {
+                "value": "%1",
+                "predecessor": null
+              },
+              {
+                "value": "%2",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%15",
+            "type": "i64",
+            "op": "mul",
+            "text": "%15:i64 = mul  %1, %2",
+            "line": 27,
+            "uses": [
+              {
+                "value": "%1",
+                "predecessor": null
+              },
+              {
+                "value": "%2",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%16",
+            "type": "i64",
+            "op": "const",
+            "text": "%16:i64 = const 1000",
+            "line": 28,
+            "uses": []
+          },
+          {
+            "id": "%17",
+            "type": "i64",
+            "op": "add",
+            "text": "%17:i64 = add  %1, %16",
+            "line": 29,
+            "uses": [
+              {
+                "value": "%1",
+                "predecessor": null
+              },
+              {
+                "value": "%16",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%19",
+            "type": "i64",
+            "op": "add",
+            "text": "%19:i64 = add  %18, %14",
+            "line": 30,
+            "uses": [
+              {
+                "value": "%18",
+                "predecessor": null
+              },
+              {
+                "value": "%14",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%20",
+            "type": "i64",
+            "op": "add",
+            "text": "%20:i64 = add  %19, %15",
+            "line": 31,
+            "uses": [
+              {
+                "value": "%19",
+                "predecessor": null
+              },
+              {
+                "value": "%15",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%22",
+            "type": "i64",
+            "op": "add",
+            "text": "%22:i64 = add  %20, %30",
+            "line": 32,
+            "uses": [
+              {
+                "value": "%20",
+                "predecessor": null
+              },
+              {
+                "value": "%30",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%23",
+            "type": "i64",
+            "op": "const",
+            "text": "%23:i64 = const 1",
+            "line": 33,
+            "uses": []
+          },
+          {
+            "id": "%24",
+            "type": "i64",
+            "op": "add",
+            "text": "%24:i64 = add  %9, %23",
+            "line": 34,
+            "uses": [
+              {
+                "value": "%9",
+                "predecessor": null
+              },
+              {
+                "value": "%23",
+                "predecessor": null
+              }
+            ]
+          }
+        ],
+        "terminator": "jump b4",
+        "edges": [
+          {
+            "target": "b4",
+            "label": ""
+          }
+        ],
+        "terminator_line": 35,
+        "terminator_uses": []
+      },
+      {
+        "id": "b6",
+        "line": 36,
+        "instructions": [],
+        "terminator": "return %18",
+        "edges": [],
+        "terminator_line": 37,
+        "terminator_uses": ["%18"]
+      }
+    ],
+    "instruction_count": 11,
+    "text": "function main::kernel\nb0:\n  %0:i64 = arg 0 \n  %1:i64 = arg 1 \n  %2:i64 = arg 2 \n  %3:i64 = const 0 \n  %4:i64 = const 0 \n  %5:i64 = const 11 \n  %6:bool = const 1 \n  branch %6, b1, b2\nb1:\n  %7:i64 = const 3 \n  jump b3\nb2:\n  %8:i64 = const 99 \n  jump b3\nb3:\n  %30:i64 = phi 5 %7@b1, %8@b2\n  jump b4\nb4:\n  %9:i64 = phi 3 %3@b3, %24@b5\n  %11:bool = lt  %9, %0\n  %18:i64 = phi 4 %4@b3, %22@b5\n  branch %11, b5, b6\nb5:\n  %14:i64 = mul  %1, %2\n  %15:i64 = mul  %1, %2\n  %16:i64 = const 1000 \n  %17:i64 = add  %1, %16\n  %19:i64 = add  %18, %14\n  %20:i64 = add  %19, %15\n  %22:i64 = add  %20, %30\n  %23:i64 = const 1 \n  %24:i64 = add  %9, %23\n  jump b4\nb6:\n  return %18\n",
+    "sha256": "c119f0d399e90ac04b58a61231310ff8a14e20fcb998190d6f0c87dfa66533ce"
+  },
+  "gvn": {
+    "name": "main::kernel",
+    "blocks": [
+      {
+        "id": "b0",
+        "line": 2,
+        "instructions": [
+          {
+            "id": "%0",
+            "type": "i64",
+            "op": "arg",
+            "text": "%0:i64 = arg 0",
+            "line": 3,
+            "uses": []
+          },
+          {
+            "id": "%1",
+            "type": "i64",
+            "op": "arg",
+            "text": "%1:i64 = arg 1",
+            "line": 4,
+            "uses": []
+          },
+          {
+            "id": "%2",
+            "type": "i64",
+            "op": "arg",
+            "text": "%2:i64 = arg 2",
+            "line": 5,
+            "uses": []
+          },
+          {
+            "id": "%3",
+            "type": "i64",
+            "op": "const",
+            "text": "%3:i64 = const 0",
+            "line": 6,
+            "uses": []
+          },
+          {
+            "id": "%4",
+            "type": "i64",
+            "op": "const",
+            "text": "%4:i64 = const 0",
+            "line": 7,
+            "uses": []
+          },
+          {
+            "id": "%30",
+            "type": "i64",
+            "op": "const",
+            "text": "%30:i64 = const 3",
+            "line": 8,
+            "uses": []
+          }
+        ],
+        "terminator": "jump b4",
+        "edges": [
+          {
+            "target": "b4",
+            "label": ""
+          }
+        ],
+        "terminator_line": 9,
+        "terminator_uses": []
+      },
+      {
+        "id": "b4",
+        "line": 10,
+        "instructions": [
+          {
+            "id": "%9",
+            "type": "i64",
+            "op": "phi",
+            "text": "%9:i64 = phi 3 %3@b0, %24@b5",
+            "line": 11,
+            "uses": [
+              {
+                "value": "%3",
+                "predecessor": "b0"
+              },
+              {
+                "value": "%24",
+                "predecessor": "b5"
+              }
+            ]
+          },
+          {
+            "id": "%11",
+            "type": "bool",
+            "op": "lt",
+            "text": "%11:bool = lt  %9, %0",
+            "line": 12,
+            "uses": [
+              {
+                "value": "%9",
+                "predecessor": null
+              },
+              {
+                "value": "%0",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%18",
+            "type": "i64",
+            "op": "phi",
+            "text": "%18:i64 = phi 4 %4@b0, %22@b5",
+            "line": 13,
+            "uses": [
+              {
+                "value": "%4",
+                "predecessor": "b0"
+              },
+              {
+                "value": "%22",
+                "predecessor": "b5"
+              }
+            ]
+          }
+        ],
+        "terminator": "branch %11, b5, b6",
+        "edges": [
+          {
+            "target": "b5",
+            "label": "true"
+          },
+          {
+            "target": "b6",
+            "label": "false"
+          }
+        ],
+        "terminator_line": 14,
+        "terminator_uses": ["%11"]
+      },
+      {
+        "id": "b5",
+        "line": 15,
+        "instructions": [
+          {
+            "id": "%14",
+            "type": "i64",
+            "op": "mul",
+            "text": "%14:i64 = mul  %1, %2",
+            "line": 16,
+            "uses": [
+              {
+                "value": "%1",
+                "predecessor": null
+              },
+              {
+                "value": "%2",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%19",
+            "type": "i64",
+            "op": "add",
+            "text": "%19:i64 = add  %18, %14",
+            "line": 17,
+            "uses": [
+              {
+                "value": "%18",
+                "predecessor": null
+              },
+              {
+                "value": "%14",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%20",
+            "type": "i64",
+            "op": "add",
+            "text": "%20:i64 = add  %19, %14",
+            "line": 18,
+            "uses": [
+              {
+                "value": "%19",
+                "predecessor": null
+              },
+              {
+                "value": "%14",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%22",
+            "type": "i64",
+            "op": "add",
+            "text": "%22:i64 = add  %20, %30",
+            "line": 19,
+            "uses": [
+              {
+                "value": "%20",
+                "predecessor": null
+              },
+              {
+                "value": "%30",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%23",
+            "type": "i64",
+            "op": "const",
+            "text": "%23:i64 = const 1",
+            "line": 20,
+            "uses": []
+          },
+          {
+            "id": "%24",
+            "type": "i64",
+            "op": "add",
+            "text": "%24:i64 = add  %9, %23",
+            "line": 21,
+            "uses": [
+              {
+                "value": "%9",
+                "predecessor": null
+              },
+              {
+                "value": "%23",
+                "predecessor": null
+              }
+            ]
+          }
+        ],
+        "terminator": "jump b4",
+        "edges": [
+          {
+            "target": "b4",
+            "label": ""
+          }
+        ],
+        "terminator_line": 22,
+        "terminator_uses": []
+      },
+      {
+        "id": "b6",
+        "line": 23,
+        "instructions": [],
+        "terminator": "return %18",
+        "edges": [],
+        "terminator_line": 24,
+        "terminator_uses": ["%18"]
+      }
+    ],
+    "instruction_count": 8,
+    "text": "function main::kernel\nb0:\n  %0:i64 = arg 0 \n  %1:i64 = arg 1 \n  %2:i64 = arg 2 \n  %3:i64 = const 0 \n  %4:i64 = const 0 \n  %30:i64 = const 3 \n  jump b4\nb4:\n  %9:i64 = phi 3 %3@b0, %24@b5\n  %11:bool = lt  %9, %0\n  %18:i64 = phi 4 %4@b0, %22@b5\n  branch %11, b5, b6\nb5:\n  %14:i64 = mul  %1, %2\n  %19:i64 = add  %18, %14\n  %20:i64 = add  %19, %14\n  %22:i64 = add  %20, %30\n  %23:i64 = const 1 \n  %24:i64 = add  %9, %23\n  jump b4\nb6:\n  return %18\n",
+    "sha256": "9afd7bb2aaf02397bae58d8612f5b6484d3606ac84045dd3ff0927cdcbd2f9dd"
+  },
+  "licm": {
+    "name": "main::kernel",
+    "blocks": [
+      {
+        "id": "b0",
+        "line": 2,
+        "instructions": [
+          {
+            "id": "%0",
+            "type": "i64",
+            "op": "arg",
+            "text": "%0:i64 = arg 0",
+            "line": 3,
+            "uses": []
+          },
+          {
+            "id": "%1",
+            "type": "i64",
+            "op": "arg",
+            "text": "%1:i64 = arg 1",
+            "line": 4,
+            "uses": []
+          },
+          {
+            "id": "%2",
+            "type": "i64",
+            "op": "arg",
+            "text": "%2:i64 = arg 2",
+            "line": 5,
+            "uses": []
+          },
+          {
+            "id": "%3",
+            "type": "i64",
+            "op": "const",
+            "text": "%3:i64 = const 0",
+            "line": 6,
+            "uses": []
+          },
+          {
+            "id": "%4",
+            "type": "i64",
+            "op": "const",
+            "text": "%4:i64 = const 0",
+            "line": 7,
+            "uses": []
+          },
+          {
+            "id": "%30",
+            "type": "i64",
+            "op": "const",
+            "text": "%30:i64 = const 3",
+            "line": 8,
+            "uses": []
+          },
+          {
+            "id": "%14",
+            "type": "i64",
+            "op": "mul",
+            "text": "%14:i64 = mul  %1, %2",
+            "line": 9,
+            "uses": [
+              {
+                "value": "%1",
+                "predecessor": null
+              },
+              {
+                "value": "%2",
+                "predecessor": null
+              }
+            ]
+          }
+        ],
+        "terminator": "jump b4",
+        "edges": [
+          {
+            "target": "b4",
+            "label": ""
+          }
+        ],
+        "terminator_line": 10,
+        "terminator_uses": []
+      },
+      {
+        "id": "b4",
+        "line": 11,
+        "instructions": [
+          {
+            "id": "%9",
+            "type": "i64",
+            "op": "phi",
+            "text": "%9:i64 = phi 3 %3@b0, %24@b5",
+            "line": 12,
+            "uses": [
+              {
+                "value": "%3",
+                "predecessor": "b0"
+              },
+              {
+                "value": "%24",
+                "predecessor": "b5"
+              }
+            ]
+          },
+          {
+            "id": "%11",
+            "type": "bool",
+            "op": "lt",
+            "text": "%11:bool = lt  %9, %0",
+            "line": 13,
+            "uses": [
+              {
+                "value": "%9",
+                "predecessor": null
+              },
+              {
+                "value": "%0",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%18",
+            "type": "i64",
+            "op": "phi",
+            "text": "%18:i64 = phi 4 %4@b0, %22@b5",
+            "line": 14,
+            "uses": [
+              {
+                "value": "%4",
+                "predecessor": "b0"
+              },
+              {
+                "value": "%22",
+                "predecessor": "b5"
+              }
+            ]
+          }
+        ],
+        "terminator": "branch %11, b5, b6",
+        "edges": [
+          {
+            "target": "b5",
+            "label": "true"
+          },
+          {
+            "target": "b6",
+            "label": "false"
+          }
+        ],
+        "terminator_line": 15,
+        "terminator_uses": ["%11"]
+      },
+      {
+        "id": "b5",
+        "line": 16,
+        "instructions": [
+          {
+            "id": "%19",
+            "type": "i64",
+            "op": "add",
+            "text": "%19:i64 = add  %18, %14",
+            "line": 17,
+            "uses": [
+              {
+                "value": "%18",
+                "predecessor": null
+              },
+              {
+                "value": "%14",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%20",
+            "type": "i64",
+            "op": "add",
+            "text": "%20:i64 = add  %19, %14",
+            "line": 18,
+            "uses": [
+              {
+                "value": "%19",
+                "predecessor": null
+              },
+              {
+                "value": "%14",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%22",
+            "type": "i64",
+            "op": "add",
+            "text": "%22:i64 = add  %20, %30",
+            "line": 19,
+            "uses": [
+              {
+                "value": "%20",
+                "predecessor": null
+              },
+              {
+                "value": "%30",
+                "predecessor": null
+              }
+            ]
+          },
+          {
+            "id": "%23",
+            "type": "i64",
+            "op": "const",
+            "text": "%23:i64 = const 1",
+            "line": 20,
+            "uses": []
+          },
+          {
+            "id": "%24",
+            "type": "i64",
+            "op": "add",
+            "text": "%24:i64 = add  %9, %23",
+            "line": 21,
+            "uses": [
+              {
+                "value": "%9",
+                "predecessor": null
+              },
+              {
+                "value": "%23",
+                "predecessor": null
+              }
+            ]
+          }
+        ],
+        "terminator": "jump b4",
+        "edges": [
+          {
+            "target": "b4",
+            "label": ""
+          }
+        ],
+        "terminator_line": 22,
+        "terminator_uses": []
+      },
+      {
+        "id": "b6",
+        "line": 23,
+        "instructions": [],
+        "terminator": "return %18",
+        "edges": [],
+        "terminator_line": 24,
+        "terminator_uses": ["%18"]
+      }
+    ],
+    "instruction_count": 8,
+    "text": "function main::kernel\nb0:\n  %0:i64 = arg 0 \n  %1:i64 = arg 1 \n  %2:i64 = arg 2 \n  %3:i64 = const 0 \n  %4:i64 = const 0 \n  %30:i64 = const 3 \n  %14:i64 = mul  %1, %2\n  jump b4\nb4:\n  %9:i64 = phi 3 %3@b0, %24@b5\n  %11:bool = lt  %9, %0\n  %18:i64 = phi 4 %4@b0, %22@b5\n  branch %11, b5, b6\nb5:\n  %19:i64 = add  %18, %14\n  %20:i64 = add  %19, %14\n  %22:i64 = add  %20, %30\n  %23:i64 = const 1 \n  %24:i64 = add  %9, %23\n  jump b4\nb6:\n  return %18\n",
+    "sha256": "167d6ab47c923ff1f4a57c5106b758617d59c9f7da18e1d8d2f54f5648c47301"
+  }
+}

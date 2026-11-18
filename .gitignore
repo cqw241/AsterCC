@@ -3,3 +3,12 @@ build/
 *.deb
 __pycache__/
 artifacts/tmp/
+playground/.venv/
+playground/web/node_modules/
+playground/web/dist/
+playground/.pytest_cache/
+playground/web/.vite/
+playground/test-results/
+
+.playwright-cli/
+playground/web/tsconfig.tsbuildinfo

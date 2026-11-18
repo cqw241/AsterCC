@@ -1,0 +1,32 @@
+{
+  "status": "pass",
+  "checks": [
+    "Stage 3 compiled and executed optimization example: 1290",
+    "Example switch compiled and ran real Hello program",
+    "Browser compilation at O0",
+    "Browser compilation at O1",
+    "Real AST node/JSON and LLVM viewers loaded",
+    "Source download is a real file",
+    "Editor split resizes by dragging",
+    "Split separator supports keyboard adjustment",
+    "UTF-8 diagnostic maps to an editor marker and source jump",
+    "LICM diff identifies actual %14 motion from b5 to b0",
+    "Real CFG edges and SSA value inspector are interactive",
+    "Accessible basic-block list matches graph",
+    "Dashboard recomputes current Stage 2/3 hash equality",
+    "Test records switch and filter against actual Stage 0 results",
+    "Bootstrap evidence download works",
+    "No page overflow at 1024px (dashboard)",
+    "No page overflow at 1024px (workbench)",
+    "No page overflow at 768px (dashboard)",
+    "No page overflow at 768px (workbench)",
+    "No page overflow at 390px (dashboard)",
+    "No page overflow at 390px (workbench)",
+    "Mobile result tab reveals actual editor",
+    "Mobile terminal tab reveals execution output",
+    "Backend unavailable state preserves source editing",
+    "No unexpected browser console errors or uncaught exceptions"
+  ],
+  "console_errors": [],
+  "base_url": "http://127.0.0.1:8000"
+}
