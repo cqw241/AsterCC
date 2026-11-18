@@ -8,16 +8,19 @@ ROOT=Path(__file__).resolve().parents[1]
 def read(name):return json.loads((ROOT/'artifacts'/name).read_text())
 def command(args):return subprocess.check_output(args,text=True,cwd=ROOT).strip()
 def table(headers,rows):return '\n'.join(['| '+' | '.join(headers)+' |','| '+' | '.join(['---']*len(headers))+' |']+['| '+' | '.join(map(str,row))+' |' for row in rows])
-def main():
+def main(from_records=False):
  boot=read('bootstrap.json');tests=read('tests.json');stage3=read('tests-stage3.json');bench=read('benchmarks.json');san=read('sanitizers.json');tool=read('toolchain.json')
- env=os.environ|{'ASTERCC_ROOT':str(ROOT)};exe=ROOT/'build/demo'
- cmd=[str(ROOT/'build/bootstrap/O2/stage3'),'examples/hello.aster','-O2','--verify-ir','-o',str(exe)]
- subprocess.run(cmd,cwd=ROOT,env=env,check=True);demo=subprocess.check_output([str(exe)],text=True)
- (ROOT/'artifacts/demo.json').write_text(json.dumps({'command':cmd,'source':'examples/hello.aster','stdout':demo,'returncode':0},ensure_ascii=False,indent=2)+'\n')
- cpu=next(x.split(':',1)[1].strip() for x in Path('/proc/cpuinfo').read_text().splitlines() if x.startswith('model name'))
- mem=next(x.split(':',1)[1].strip() for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemTotal'))
- environment={'date':datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(timespec='seconds'),'os':platform.platform(),'cpu':cpu,'memory':mem,'g++':command(['g++','--version']).splitlines()[0],'cmake':command(['cmake','--version']).splitlines()[0],'python':sys.version.split()[0],**tool['versions']}
- (ROOT/'artifacts/environment.json').write_text(json.dumps(environment,ensure_ascii=False,indent=2)+'\n')
+ if from_records:
+  demo=read('demo.json')['stdout'];environment=read('environment.json')
+ else:
+  env=os.environ|{'ASTERCC_ROOT':str(ROOT)};exe=ROOT/'build/demo'
+  cmd=[str(ROOT/'build/bootstrap/O2/stage3'),'examples/hello.aster','-O2','--verify-ir','-o',str(exe)]
+  subprocess.run(cmd,cwd=ROOT,env=env,check=True);demo=subprocess.check_output([str(exe)],text=True)
+  (ROOT/'artifacts/demo.json').write_text(json.dumps({'command':cmd,'source':'examples/hello.aster','stdout':demo,'returncode':0},ensure_ascii=False,indent=2)+'\n')
+  cpu=next(x.split(':',1)[1].strip() for x in Path('/proc/cpuinfo').read_text().splitlines() if x.startswith('model name'))
+  mem=next(x.split(':',1)[1].strip() for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemTotal'))
+  environment={'date':datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(timespec='seconds'),'os':platform.platform(),'cpu':cpu,'memory':mem,'g++':command(['g++','--version']).splitlines()[0],'cmake':command(['cmake','--version']).splitlines()[0],'python':sys.version.split()[0],**tool['versions']}
+  (ROOT/'artifacts/environment.json').write_text(json.dumps(environment,ensure_ascii=False,indent=2)+'\n')
  stages=boot['stages'];hash0=next(r['binary_sha256'] for r in stages if r['optimization']==0 and r['stage']==3);hash2=next(r['binary_sha256'] for r in stages if r['optimization']==2 and r['stage']==3)
  sourcefiles=list((ROOT/'compiler').glob('*.aster'));asterlines=sum(len(p.read_text().splitlines()) for p in sourcefiles);functions=sum(len(re.findall(r'^fn\s',p.read_text(),re.M)) for p in sourcefiles)
  snapshots=ROOT/'artifacts/optimization';input_ir=(snapshots/'0-00-input.ssa').read_text();output_ir=(snapshots/'optimized.ssa').read_text();passrows=json.loads((snapshots/'stats.json').read_text())
@@ -27,8 +30,16 @@ def main():
  for name in ['constants','gvn','licm','arrays']:
   baseline=next(r for r in bench['rows'] if r['benchmark']==name and r['configuration']=='A0-L0');own=next(r for r in bench['rows'] if r['benchmark']==name and r['configuration']=='A2-L0')
   speedrows.append([name,baseline['instructions'],own['instructions'],f"{baseline['runtime_ms']/own['runtime_ms']:.3f}×"])
+ pg=json.loads((ROOT/'playground/evidence/validation.json').read_text())
+ packages=json.loads((ROOT/'playground/web/package-lock.json').read_text())['packages']
+ uvlock=(ROOT/'playground/uv.lock').read_text()
+ pg_versions=[(name,packages['node_modules/'+name]['version']) for name in ['react','typescript','vite','tailwindcss','monaco-editor','@xyflow/react','echarts']]
+ pg_versions += [(name,re.search(r'name = "'+name+r'"\nversion = "([^"\n]+)"',uvlock).group(1)) for name in ['fastapi','uvicorn']]
  values={
  '@@DATE@@':environment['date'],
+ '@@PG_ENV@@':table(['Playground 组件','锁文件版本'],pg_versions),
+ '@@PG_DATE@@':pg['verified_at'],
+ '@@PG_BACKEND@@':str(pg['backend_tests']),'@@PG_FRONTEND@@':str(pg['frontend_tests']),'@@PG_BROWSER@@':str(pg['browser_checks']),
  '@@ENV@@':table(['项目','实际值'],[(k,str(v)) for k,v in environment.items()]),
  '@@LINES@@':str(asterlines),'@@FUNCTIONS@@':str(functions),
  '@@STAGES@@':table(['优化','阶段','原生 ELF SHA-256 前 16 位','LLVM IR SHA-256 前 16 位','构建秒数'],[[f'O{r["optimization"]}',r['stage'],r['binary_sha256'][:16],r['llvm_sha256'][:16],f'{r["seconds"]:.3f}'] for r in stages]),
@@ -50,15 +61,23 @@ def main():
 
 验收目标是实际完成 C++ Stage 0 → Aster Stage 1 → Stage 2 → Stage 3，并使 Stage 2/3 的 LLVM IR 和原生可执行文件逐字节相同。同时用独立结果计算、已知行为程序和逐 Pass 检查检验优化语义，区分自定义优化和 LLVM 优化的贡献。
 
-本报告及其数据由 `bash scripts/reproduce.sh` 生成。数据记录时间为 @@DATE@@，采用 Asia/Shanghai 时区。姓名、学号等身份信息未作假定。
+编译器实验数据由 `bash scripts/reproduce.sh` 生成，记录时间为 @@DATE@@；Playground 验证记录时间为 @@PG_DATE@@。两组记录均采用 Asia/Shanghai 时区。报告由 `scripts/report.py` 根据记录生成，姓名、学号等身份信息未作假定。
 
 ## 二、实验环境
 
 @@ENV@@
 
-LLVM 使用锁定为 18.1.3 的 Ubuntu 软件包，在项目 `.toolchain/` 内解压，包 SHA-256 固定在 [工具链锁文件](scripts/llvm18.lock.json)。基础 libc 等库由当前 Ubuntu 提供，完整版本和包记录见 [工具链记录](artifacts/toolchain.json)、[环境记录](artifacts/environment.json)。不安装共享 Python 环境或第三方 Python 项目依赖。
+LLVM 使用锁定为 18.1.3 的 Ubuntu 软件包，在项目 `.toolchain/` 内解压，包 SHA-256 固定在 [工具链锁文件](scripts/llvm18.lock.json)。基础 libc 等库由当前 Ubuntu 提供，完整版本和包记录见 [工具链记录](artifacts/toolchain.json)、[环境记录](artifacts/environment.json)。编译器复现脚本仅使用 Python 标准库；Playground 的 FastAPI 等依赖安装于项目本地 `uv` 隔离环境，不修改共享 Python 环境。
 
 Stage 0 使用 C++20 和 CMake；运行时使用 C11。Aster 编译器主体目前为 @@LINES@@ 行、@@FUNCTIONS@@ 个 Aster 函数，按前端、SSA、优化、LLVM 发射及驱动划分源码模块。标准库另外用 Aster 实现确定性哈希表和字符串构建器。
+
+### Playground 展示环境
+
+@@PG_ENV@@
+
+前端使用 React、TypeScript、Vite、Tailwind CSS 和 shadcn/ui 风格的本地组件，Monaco 负责代码与 Diff，React Flow 展示 CFG/SSA，ECharts 展示统计。前端版本取自 `playground/web/package-lock.json`，后端版本取自 `playground/uv.lock`。运行要求为 Node.js 22.12+、Python 3.12+ 和 uv；本地首次安装需要网络，运行时字体与编辑器 Worker 从本地提供。
+
+在包含 Playground 的工作区根目录执行 `bash playground/serve.sh`，访问 `http://127.0.0.1:8000`；`bash playground/check.sh` 执行该展示层的检查。开发时前后端独立启动。独立 worktree 通过 `ASTERCC_ARTIFACT_ROOT` 或 Git common directory 查找已有编译器制品，任务与依赖留在当前 worktree。详见 [启动说明](playground/README.md)。
 
 ## 三、实验内容及原理
 
@@ -109,6 +128,22 @@ C 运行时仅承担分配、字节缓冲、数组存储、文件、终端和进
 
 开发期维护工具 `sync_seed.py` 将编译器实现使用的 Aster 子集机械映射为独立 C++20 源码。提交的 C++ 种子无需该工具即可构建，CMake 和正式复现均不调用它。编译用户程序及 Stage 1/2/3 时没有 Aster 到 C++ 的路径；Aster 源码直接生成 LLVM IR。该取舍降低双份实现的漂移，但意味着两者不是独立设计的语义裁判。
 
+### Playground 与编译器的连接
+
+Playground 提供代码工作台、优化探索和自举仪表盘。FastAPI 将源码与选项转换为现有 CLI 参数，调用真实 Stage 3，收集 AST、LLVM IR、`--trace-dir` 和 `--stats-json`。编译和执行分开管理；终端显示真实 stdout、stderr、退出码及耗时。
+
+```mermaid
+flowchart LR
+    U[React 工作台] --> A[FastAPI 任务适配层]
+    A --> C[AsterCC Stage 3]
+    C --> T[AST LLVM SSA 快照及统计]
+    T --> V[Diff CFG 与 Pass 时间线]
+    R[自举与性能 artifacts] --> D[自举仪表盘]
+    A --> X[原生程序执行结果]
+```
+
+展示层不承担类型检查、SSA 构造或编译优化，不改动编译器核心。在线任务与既有自举、性能记录分别标明来源；刷新仪表盘会校验当前文件哈希，不重新运行历史实验。
+
 ## 四、关键数据结构和核心算法（可从整体功能设计上进行描述，也可按照完成的各项功能设计或任务进行描述）
 
 ### 4.1 设计的各类数据结构
@@ -127,6 +162,15 @@ C 运行时仅承担分配、字节缓冲、数组存储、文件、终端和进
 所有编译器节点以稳定整数 ID 引用，避免把宿主指针、宿主哈希表迭代顺序或地址写入输出。结构体字段赋值通过“提取旧值—插入新字段—重建上层值”保留值语义；数组元素更新则写回共享存储。
 
 自定义 IR 区分常量、参数、phi、整数运算、记录构造/提取/插入、数组操作、调用与控制流。替换链允许优化器重定向已有使用；查询时取得 canonical value。终结指令单独存放，不能被当作普通无用表达式删除。
+
+Playground 另使用以下展示结构，不改变编译器的 IR：
+
+| 展示结构 | 内容和作用 |
+| --- | --- |
+| Job | 源码摘要、优化选项、任务状态、命令结果、诊断及制品索引 |
+| TraceFunction / PassSnapshot | 函数 ID、完整函数名、Pass 数字序号、原始文件及统计 |
+| Snapshot / Block / Instruction | 从真实 SSA 解析的基本块、指令、终结指令、值使用与 phi 前驱 |
+| IRChange | 同一函数两个快照中稳定值 ID 的新增、删除、修改及块间移动 |
 
 ### 4.2 实现的各项功能核心算法（可结合图、表、文字等进行展示）
 
@@ -180,6 +224,14 @@ SSA 验证器检查块封闭、类型、phi 前驱及边的唯一性、支配关
 
 逐 Pass 输出按函数 ID、Pass 序号和名称命名。脚本比较全部摘要，若不同则报告首个文件，定位差异发生在构造、SCCP、GVN 等哪一步。运行耗时不进入确定性摘要。该跨阶段可观察性是项目的工程特色，不将已有 SSA 或优化算法宣称为新的理论算法。
 
+#### 逐 Pass Diff 与 CFG/SSA 可视化
+
+快照按函数 ID 和 Pass 数字序号索引，不能用文件名字典序排列 `1`、`2`、`10`，也不能把两次 SCCP 合为一个阶段。统计按函数生成顺序与快照序列对应，完整函数名用于显示，避免跨模块同名函数误合并。
+
+Diff 使用真实文本；值差异以稳定 SSA ID 对照，比较操作文本和所属块。指令内容不变、所属块改变表示移动；内容和块同时改变时保留修改及来源／目标块信息。`changed_instructions` 是编译器内部变化统计，与快照差异数分别展示。指令计数沿用 `count_ir`，不包含 arg、const、string 和控制流终结指令。
+
+CFG 从 jump／branch 的实际目标解析边，按分支顺序标注 true／false，保留循环回边；phi 的 `%value@block` 保存值与前驱的对应关系。选中指令后高亮其输入和使用者，并定位右侧 SSA。图结构由文本派生，布局位置仅影响显示，不参与编译算法。SCCP 工作列表、格变迁等未记录的内部事件不作为动态数据展示。
+
 ### 4.3 错误处理（编程过程中容易遇到的错误及处理）
 
 | 易错点 | 本项目的处理 |
@@ -200,6 +252,8 @@ SSA 验证器检查块封闭、类型、phi 前驱及边的唯一性、支配关
 ```
 
 前端诊断退出状态为 1，用法错误为 2。越界和除零遵循语言定义，以状态 70 终止；文件错误报告明确路径。没有使用吞掉错误继续生成代码的兜底策略。
+
+Playground 将编译器给出的 UTF-8 字节列转换为编辑器使用的 UTF-16 列，保证中文和 emoji 之后的错误位置正确。源码或选项修改后，已有结果标记为过期。编译失败保留 stderr；没有位置信息的错误显示原始消息。任务支持取消，编译默认限时 30 秒、执行限时 5 秒，输出上限 1 MiB；停止或超限终止进程组。服务断连时保留本地源码编辑与重试入口。
 
 ### 4.4 运行结果和分析（体现输入和输出）
 
@@ -283,6 +337,28 @@ A0-L0 表示自定义 O0、LLVM O0；A2-L0 固定 LLVM O0 观察自身优化；A
 
 每次测量样本、原始输出、输出 SHA-256、二进制规模和 Pass 统计见 [benchmarks.json](artifacts/benchmarks.json)。这些是本机小规模内核的测量，不代表大型应用或其他硬件的普遍加速比。
 
+#### Playground 展示与新增验证
+
+Playground 验证记录中，后端 @@PG_BACKEND@@ 项集成测试、前端 @@PG_FRONTEND@@ 项真实快照差异测试、浏览器 @@PG_BROWSER@@ 项交互检查通过，TypeScript 检查与生产构建通过。该组检查与前述 Stage 0／Stage 3 各 32 项编译器行为检查分别统计。完整依据见 [展示层验证记录](playground/evidence/validation.md) 和 [浏览器检查清单](playground/evidence/browser.json)。
+
+图 1 展示 Stage 3 编译并执行优化综合示例，终端输出 `1290`，右侧为真实自定义 SSA。界面可切换 AST 和 LLVM IR，Aster 与 LLVM 优化级别可独立设置。
+
+![图 1 AsterCC 工作台与真实编译运行结果](playground/evidence/workbench.png)
+
+图 2 展示 LICM 前后 Diff，Pass 指令数为 8 → 8；`%14 = mul %1, %2` 从循环体 b5 移至前置块 b0。总指令数不变仍产生有效优化，因此不能仅以静态指令减少判断 LICM 是否生效。
+
+![图 2 LICM 前后 IR Diff 与移动记录](playground/evidence/optimization.png)
+
+图 3 对照同一次变换后的 CFG 与 SSA，选中的 `%14` 位于 b0，输入为 `%1`、`%2`，使用者为 `%19`、`%20`；循环回边和 phi 合流仍保留。
+
+![图 3 CFG 与 SSA 定义使用关系联动](playground/evidence/cfg.png)
+
+图 4 展示 O2 自举链及三组优化配置的历史性能比较。仪表盘区分记录中的固定点结论与当前文件校验；完整哈希仍以前文和原始 JSON 为依据，截图中的截断摘要只用于导航浏览。
+
+![图 4 自举链与优化性能仪表盘](playground/evidence/bootstrap.png)
+
+浏览器检查还覆盖错误跳转、实际文件下载、分栏拖拽及键盘调整、1440／1024／768／390px 布局和服务断连状态。本次报告补充未重新测量编译器性能，也未重新运行自举；原哈希、样本和加速比保持原实验记录。重新截图的操作及推荐取景见 [课程展示截图指南](docs/playground-screenshots.md)。
+
 ## 五、总结
 
 本实验交付了真实可运行的静态类型语言和编译器，并在 O0、O2 两个配置完成 Stage 0 → Stage 1 → Stage 2 → Stage 3。自定义 SSA 构造与优化都能由 Aster 自身执行；固定点、逐 Pass 跟踪、独立运行及语义结果相互补充，使自举结果可以复核。
@@ -290,6 +366,8 @@ A0-L0 表示自定义 O0、LLVM O0；A2-L0 固定 LLVM O0 观察自身优化；A
 主要工程体会是先固定可观察语义，再选择优化算法。回绕整数、短路、数组共享和可能终止的操作都会影响合法变换，不能只根据代数形式或未使用的结果判断是否可删除。稳定 ID、明确的副作用分类和阶段摘要，也比只比较最终输出更容易定位编译器自身的错误。
 
 目前的取舍是：支配集合和 SCCP 边集合使用矩阵，空间为 O(B²)；运行时为进程级 arena；模块整程序编译、类型名全局唯一；没有别名分析、MemorySSA、过程间优化、向量化、垃圾回收或调试信息。后续可在保持现有可复核自举链的基础上，改用稀疏支配结构、加入更精细的内存分析和长期运行的回收机制。
+
+新增 Playground 将原有追踪文件转化为可交互的工程观察工具：源程序、逐 Pass IR、基本块及自举证据能够相互核对。这属于可观察性与课程展示方面的工程扩展，不是新的编译优化算法。展示层当前支持单文件与标准库，终端为非交互输出视图；仪表盘只读展示实验记录。后续可补充多文件编辑和更细的源码—IR 映射。
 
 固定点证明当前源码与工具链下的编译稳定，不等于完整的语义正确性或信任链安全证明。由于种子与 Aster 实现同源，额外的独立参考结果和已知行为检查尤为必要。本报告区分实现、测试证据与尚未覆盖的能力，不把计划功能当作已完成结果。
 
@@ -303,4 +381,8 @@ A0-L0 表示自定义 O0、LLVM O0；A2-L0 固定 LLVM O0 观察自身优化；A
  assert '@@' not in report
  (ROOT/'实验报告.md').write_text(report)
  print('Markdown report generated from recorded runs: 实验报告.md')
-if __name__=='__main__':main()
+if __name__=='__main__':
+ import argparse
+ parser=argparse.ArgumentParser(description=__doc__)
+ parser.add_argument('--from-records',action='store_true',help='Render existing records without compiling or rewriting experiment data')
+ main(parser.parse_args().from_records)
