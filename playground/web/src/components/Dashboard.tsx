@@ -127,7 +127,7 @@ export default function Dashboard() {
       </div>
       <div className="dashboard-note">
         <Clock3 size={14} />
-        <span>这里展示已保存的实验与本次文件校验。编译／运行时间来自历史测量，不是实时基准。</span>
+        <span>实验记录与制品校验</span>
       </div>
       <section className="dashboard-section bootstrap-section">
         <div className="section-heading">
@@ -490,7 +490,7 @@ export default function Dashboard() {
           </details>
           <p className="evidence-footnote">
             <ExternalLink size={12} />
-            所有数据直接读取本地 artifacts；缺失项保留缺失状态。
+            数据目录：artifacts/
           </p>
         </section>
       </div>

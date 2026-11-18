@@ -233,7 +233,7 @@ export default function App() {
           <aside className="info-panel">
             <div>
               <strong>{health?.version ?? '编译器未连接'}</strong>
-              <p>真实本地编译 · 原生执行 · 自定义 SSA</p>
+              <p>本地编译 · 原生执行 · 自定义 SSA</p>
             </div>
             <code>{health?.compiler ?? '正在连接…'}</code>
             <p>

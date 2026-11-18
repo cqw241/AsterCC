@@ -26,7 +26,7 @@ import SafeDiff from './SafeDiff';
 const PASS_INFO: Record<string, { name: string; description: string }> = {
   input: {
     name: '输入 SSA',
-    description: 'sealed-block 构造后的真实输入快照；后续 Pass 从这里开始。',
+    description: 'sealed-block 构造后的输入快照；后续 Pass 从这里开始。',
   },
   simplify: {
     name: '常量折叠与代数化简',
@@ -35,7 +35,7 @@ const PASS_INFO: Record<string, { name: string; description: string }> = {
   sccp: {
     name: '稀疏条件常量传播',
     description:
-      '联合传播值格与可执行边，在常量条件下排除不可执行分支。这里展示的是变换后的快照，不是工作列表事件。',
+      '联合传播值格与可执行边，在常量条件下排除不可执行分支。',
   },
   cfg: { name: '控制流简化', description: '清理不可达块、修正 phi 前驱并合并满足条件的基本块。' },
   dce: {
@@ -199,7 +199,7 @@ export default function Explorer({
         <div>
           <div className="page-eyebrow">
             <Workflow size={14} />
-            真实编译追踪
+            编译追踪
           </div>
           <h1>
             优化探索<span>Optimization Explorer</span>
@@ -240,7 +240,7 @@ export default function Explorer({
       {error ? (
         <ErrorState message={error} retry={() => setRetry((v) => v + 1)} />
       ) : loading ? (
-        <Spinner label="索引真实追踪文件…" />
+        <Spinner label="索引追踪文件…" />
       ) : !fn ? (
         <Empty title="没有追踪快照">切换数据集，或在工作台完成一次编译。</Empty>
       ) : (

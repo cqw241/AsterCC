@@ -341,7 +341,7 @@ export default function Workbench(p: Props) {
                     />
                   </div>
                   <div className="editor-caption">
-                    <span>{example?.description ?? '编辑 Aster 源码，编译以查看真实 IR。'}</span>
+                    <span>{example?.description ?? '编辑 Aster 源码，编译以查看IR。'}</span>
                     <span>{p.source.split('\n').length} 行</span>
                   </div>
                 </section>
@@ -410,7 +410,7 @@ export default function Workbench(p: Props) {
                     ) : !content ? (
                       <Empty title={p.busy ? '编译正在进行' : '等待编译结果'}>
                         {p.busy
-                          ? '完成后将在这里显示真实编译制品。'
+                          ? '完成后将在这里显示编译制品。'
                           : '编译源码，查看 AST、自定义 SSA 和 LLVM IR。'}
                       </Empty>
                     ) : view === 'ast' ? (
