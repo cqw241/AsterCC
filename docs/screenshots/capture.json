@@ -1,0 +1,19 @@
+{
+  "captured_at": "2026-11-18T15:00:47.201954+08:00",
+  "dataset": "recorded-optimization",
+  "function": "main::kernel",
+  "before": "0-5-gvn.ssa",
+  "after": "0-6-licm.ssa",
+  "selected_value": "%14",
+  "graph_zoom": 1.2,
+  "viewport": {
+    "width": 1880,
+    "height": 1700
+  },
+  "screenshots": {
+    "cfg-readable.png": "a812ecc37638d8791fec9cc71371ff48ac8786f3a0f64ddc6f5e153bdc2214f1",
+    "ssa-readable.png": "ab1ce08b92cb8db9709a6ca4b27ea2794703efb34c5f369cc723fc00d2bd3100"
+  },
+  "before_sha256": "9afd7bb2aaf02397bae58d8612f5b6484d3606ac84045dd3ff0927cdcbd2f9dd",
+  "after_sha256": "167d6ab47c923ff1f4a57c5106b758617d59c9f7da18e1d8d2f54f5648c47301"
+}
